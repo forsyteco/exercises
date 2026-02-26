@@ -1,0 +1,183 @@
+---
+description: NestJS coding pattern preferences
+alwaysApply: true
+---
+## Canonical example
+Follow the Agents module style shown in the repo:
+- commands are simple readonly constructor classes
+- application services return presenter DTOs (not domain objects)
+- repositories are ports (abstract classes) returning domain models
+- persistence adapter is called “orm” but uses Prisma
+- mapping domain -> DTO uses class-transformer plainToInstance + excludeExtraneousValues
+- controllers use Swagger decorators, guards, SerializeResponse decorators, and per-route ValidationPipe
+
+---
+
+## Absolute path imports
+- Always use `@/` path aliases for internal imports (e.g., `@/modules/...`, `@/common/dtos`, `@/utils/...`).
+- Do not use relative imports unless the existing code in the same folder does.
+
+---
+
+## Module structure (MANDATORY)
+Use the existing module layout under `@/modules/<context>`:
+
+@/modules/<context>/
+  domain/
+    factories/
+    value-objects/
+    <entity>.ts
+  application/
+    commands/
+    ports/
+    <context>.service.ts
+    <context>.module.ts
+  presenters/
+    http/
+      dto/
+      <context>.controller.ts
+  infrastructure/
+    persistence/
+      orm/                 # NOTE: this is Prisma-based in this repo
+        mappers/
+        repositories/
+        orm-persistence.module.ts
+
+Do not introduce “contexts/” or rename “presenters” to “presentation”. Match the repo.
+
+---
+
+## DDD boundaries (match repo conventions)
+
+### Domain
+- Entities are simple classes with public fields (as shown in Agent).
+- Factories are @Injectable and generate ids + timestamps (use IdGenerator when present).
+- Value objects (if used) should be small classes with readonly value and equals.
+
+Domain MUST NOT import:
+- Prisma
+- Nest controllers/modules
+- Swagger
+- HttpService/AWS/Temporal
+
+Domain MAY import:
+- `@nestjs/common` ONLY for domain factories (repo-approved pattern).
+
+### Application
+- Application services orchestrate repos + factories.
+- Application services return presenter DTOs and raise Nest HTTP exceptions (ConflictException, NotFoundException) as in the sample.
+- Commands are readonly constructor args classes (no decorators, no business logic).
+
+Application MUST:
+- Catch Prisma constraint errors
+- Keep helper methods like `ensure<Entity>()` and `to<Entity>Dto()` private inside service.
+
+Application MUST NOT:
+- Use PrismaService directly (that’s infrastructure).
+- Return Prisma records.
+
+### Infrastructure
+- “orm” is Prisma in this repo.
+- Repositories implement ports and use PrismaService.
+- Use a mapper class (`<Entity>Mapper`) to map Prisma model <-> domain model.
+- Use `prisma.$transaction([...])` for findMany + count pagination as in the sample.
+
+### Presenters (HTTP)
+- Controllers are thin: create command objects and call service methods.
+- Use:
+  - `@ApiTags`, `@ApiBearerAuth`, `@ApiOperation`, `@ApiParam`, `@ApiQuery`, `@ApiResponse`
+  - `@UseGuards(JwtAuthGuard, <ContextGuard>)` patterns
+  - `@UsePipes(new ValidationPipe({ whitelist: true, transform: true }))` on write endpoints
+  - `@SerializeResponse(Dto)` and `@SerializePageResponse(Dto)` decorators
+- Route prefix should include `:organisationIdOrSlug` when module is organisation-scoped.
+
+DTO rules:
+- Request DTOs use class-validator + Swagger property decorators.
+- Update DTOs use `PartialType(CreateDto)`.
+
+---
+
+## Repository ports (MANDATORY style)
+Ports are abstract classes under `application/ports` and may use shared DTOs like `PaginationQueryDto`.
+
+Repository methods should match existing patterns:
+- list: `findAll(pagination: PaginationQueryDto): Promise<{ value: Domain[]; count: number }>`
+- lookup: `findByIdOrSlug(idOrSlug: string): Promise<Domain | null>`
+- mutations: `save(domain: Domain): Promise<Domain>`, `update(id: string, patch: Partial<Domain>): Promise<Domain>`, `delete(id: string): Promise<void>`
+
+Use the abstract class itself as the DI token.
+
+---
+
+## Prisma (“orm”) repository adapter rules (MANDATORY)
+- Implement the port in `infrastructure/persistence/orm/repositories/`.
+- Inject `PrismaService` from `@/modules/shared/prisma/prisma.service`.
+- Use utilities where available:
+  - `createOrderBy(sortBy)`
+  - `buildWhereFromQuery(query, config)`
+
+### Update patterns
+When updating, build `Prisma.<Model>UpdateInput` incrementally:
+- Only include fields that are not `undefined`.
+- Preserve `null` as an explicit value if the command/DTO allows it.
+
+### Pagination patterns
+- Accept `PaginationQueryDto` with defaults (`page=1`, `perPage=10`).
+- Use `$transaction([findMany, count])`.
+- Return `{ value: mapped, count }`.
+
+---
+
+## Persistence module binding (MANDATORY)
+`Orm<Context>PersistenceModule`:
+- imports: `[SharedModule]`
+- providers binds the port token:
+  - `{ provide: <Port>, useClass: Orm<Repo> }`
+- exports: `[<Port>]`
+
+Context module imports the persistence module + SharedModule and provides service + factory.
+
+---
+
+## DTO mapping rules (MANDATORY)
+- Application service must map Domain -> DTO using:
+  - `plainToInstance(DtoClass, {...}, { excludeExtraneousValues: true })`
+- DTOs must use `@Expose()` on all fields and `@Type(() => Date)` for dates.
+- Do not return domain entities from controllers.
+
+---
+
+## Error handling (match house style)
+- NotFound: throw `new NotFoundException("<Entity> not found")`
+- Unique conflict: if `error?.code === "P2002"` throw `new ConflictException("A <entity> with this <field> already exists.")`
+- Re-throw unknown errors.
+
+Do not throw strings.
+
+---
+
+## Commands (MANDATORY style)
+- Commands are classes with constructor(public readonly ...) parameters.
+- Optional fields use `?:` and often allow `| null` when stored nullable in DB.
+- Update commands include `agentIdOrSlug`-style identifier and optional patch fields.
+
+---
+
+## When Cursor generates a new feature/endpoints, it MUST include
+1) Command(s)
+2) Port changes (if needed)
+3) Service method(s) including ensureX + toXDto
+4) DTO(s) with validation + Swagger decorators
+5) Controller endpoints with guards, docs, SerializeResponse, ValidationPipe
+6) Mapper + Prisma repository changes if persistence schema changes
+7) Module wiring so DI compiles
+
+Never stop at only controller/service.
+
+---
+
+## Do NOTs (strict)
+- Do NOT put Prisma imports in domain/application
+- Do NOT return Prisma models outside infrastructure
+- Do NOT skip mapper layer
+- Do NOT use relative imports instead of `@/` unless already in that file

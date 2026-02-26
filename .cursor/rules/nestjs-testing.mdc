@@ -1,0 +1,212 @@
+---
+description: NestJS testing preferences
+alwaysApply: true
+---
+## Purpose
+Define consistent, maintainable testing practices for this NestJS codebase:
+- Unit tests for isolated classes (services, controllers, providers, guards, pipes)
+- End-to-end (e2e) tests for validating real HTTP interactions and module wiring
+- Repeatable local/CI runs with reliable setup/teardown for test infrastructure
+
+---
+
+## Test file locations & naming (MANDATORY)
+
+### Unit tests
+- Place unit test files **next to the source file** they test.
+- Naming: `*.spec.ts`
+- Each controller/provider/service/etc. should have its **own** dedicated spec file.
+
+Examples:
+- `agents.service.ts` → `agents.service.spec.ts`
+- `agents.controller.ts` → `agents.controller.spec.ts`
+- `orm-agent.repository.ts` → `orm-agent.repository.spec.ts`
+
+### End-to-end (e2e) tests
+- Place e2e test files under a dedicated `test/` directory.
+- Naming: `*.e2e-spec.ts`
+- Group e2e tests by feature (module) and capability.
+
+Examples:
+- `test/agents/agents.e2e-spec.ts`
+- `test/auth/auth.e2e-spec.ts`
+
+---
+
+## How unit tests differ from e2e tests
+
+### Unit tests
+- Focus on individual classes/functions.
+- External dependencies are mocked/stubbed (repositories, PrismaService, HttpService, AWS clients, Temporal client).
+- Run fast and cover edge cases and error handling.
+
+### e2e tests
+- Validate the system from the outside (HTTP requests → controllers → services → persistence).
+- Run against a real app instance (Nest application) and typically a real test database.
+- Cover aggregate behavior and integration points closer to production usage.
+
+---
+
+## Running tests (recommended commands)
+
+### Unit test: watch a specific pattern
+- Run watcher filtered to a file or name pattern:
+  - `npm run test:watch -- <pattern>`
+  - Example: `npm run test:watch -- agents.service`
+
+### e2e tests
+- Run all e2e tests:
+  - `npm run test:e2e`
+- Run e2e tests filtered to a feature:
+  - `npm run test:e2e -- agents`
+
+---
+
+## Unit testing best practices (MANDATORY)
+
+### Use Nest TestingModule
+- Build a focused `TestingModule` with the class under test in `providers` or `controllers`.
+- Provide mocks for all injected dependencies.
+
+### Mocking pattern (Jest)
+- Prefer explicit typed mocks per dependency.
+- Only mock the methods used in a given test suite.
+
+#### Mock repository helper pattern
+Use a small factory for mock repositories with jest.fn() methods.
+
+General shape:
+- `type Mock<T> = Partial<Record<keyof T, jest.Mock>>;`
+- `const createMockX = (): Mock<X> => ({ ... })`
+
+### Assertions & error testing
+- Test the happy path and failure path.
+- For error paths:
+  - assert exception type (`toBeInstanceOf(NotFoundException)`)
+  - assert message/metadata when important
+
+### Unit test scope rules
+- Unit tests must not:
+  - connect to a database
+  - require Docker
+  - require network access
+- Unit tests may:
+  - validate DTOs/pipes in isolation
+  - verify mapping to DTOs (e.g., `plainToInstance` output shape)
+  - verify Prisma error translation logic (simulate `{ code: "P2002" }`)
+
+---
+
+## e2e testing best practices (MANDATORY)
+
+### Location and structure
+- Each feature should have its own e2e file:
+  - `test/<feature>/<feature>.e2e-spec.ts`
+- Describe blocks should identify feature + route prefix:
+  - `describe("[Feature] Agents - /:organisationIdOrSlug/agents", () => {})`
+
+### Use Nest TestingModule with feature module(s)
+- Prefer importing the specific feature module(s) being tested.
+- Include any shared modules required for the feature to boot.
+- Configure persistence explicitly for e2e.
+
+### Create a real Nest app instance
+- Use `moduleFixture.createNestApplication()`
+- Apply the same global settings as production where practical:
+  - ValidationPipe
+  - any required global filters/interceptors if used in prod
+- Call `await app.init()` before requests.
+- Close in `afterAll` with `await app.close()`.
+
+### Use supertest for HTTP calls
+- Use `request(app.getHttpServer())` or capture `httpServer`.
+
+### Apply global ValidationPipe in e2e
+Use a global ValidationPipe so e2e matches production behavior:
+- `whitelist: true`
+- `transform: true`
+- `forbidNonWhitelisted: true`
+- `enableImplicitConversion: true` (when applicable)
+
+### e2e test patterns (CRUD)
+For CRUD endpoints, include tests for:
+- Create → returns expected shape
+- List → returns item(s)
+- Get one → returns expected item
+- Update → persists changes
+- Delete → returns success and subsequent GET returns 404
+
+### Auth in e2e
+- If endpoints are protected, include required auth headers.
+- Prefer a deterministic testing auth strategy (test key / seeded JWT / test user) and keep it consistent.
+
+---
+
+## Test database & lifecycle (MANDATORY for DB-backed e2e)
+
+### Database isolation
+- Use a dedicated test database instance/port.
+- Avoid sharing with local dev DB.
+- Prefer ephemeral DB per test run in CI.
+
+### Docker compose pattern
+- Provide `test-db` service (different port from dev db).
+- Ensure e2e uses the test-db connection details.
+
+### IMPORTANT NOTE: teardown reliability
+When Jest fails, npm `post*` hooks may not run.
+To ensure teardown always happens:
+- Option A: manually run teardown script after failures.
+- Option B (recommended): use `npm-run-all` with `--continue-on-error` and move teardown to an explicit script.
+
+Example scripts:
+- `pretest:e2e`: bring up test-db
+- `test:e2e:run`: run jest with e2e config
+- `test:e2e:teardown`: stop and remove test-db
+- `test:e2e`: run-all with continue-on-error so teardown runs even if tests fail
+
+---
+
+## What to mock vs what to run for real
+
+### Unit tests
+Mock:
+- persistence (PrismaService, repositories)
+- external HTTP (HttpService)
+- AWS SDK clients (Bedrock/S3/SQS/Kinesis/etc.)
+- Temporal client/workflows/activities entry points
+
+Run real:
+- pure domain logic
+- mapping functions
+- DTO validation in isolation (optional)
+
+### e2e tests
+Run real:
+- Nest controllers/services/modules wiring
+- global pipes/guards/filters (as configured for the app)
+- real database (test-db) where persistence is central to the feature
+
+Mock (only if required):
+- external network dependencies (AWS, third-party APIs) via module overrides or adapters configured for tests
+
+---
+
+## Required coverage expectations (guidance)
+- Unit tests must cover:
+  - happy path
+  - key failures/exceptions
+  - edge cases (validation, not found, conflict)
+- e2e tests must cover:
+  - core endpoints per feature
+  - auth behavior where applicable
+  - validation behavior (bad payload → 400)
+
+---
+
+## Checklist for new features
+When adding a new feature/module:
+- [ ] Add unit tests for each new service/controller/provider (`*.spec.ts`)
+- [ ] Add at least one e2e spec per feature (`test/<feature>/*.e2e-spec.ts`)
+- [ ] Ensure e2e sets up ValidationPipe and closes the app
+- [ ] Ensure test-db setup/teardown is reliable in local runs and CI
