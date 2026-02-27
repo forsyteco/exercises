@@ -4,7 +4,7 @@ import { PrismaService } from '@/modules/prisma/prisma.service';
 import { AgentDto } from '@/modules/agent/presenters/http/dto/agent.dto';
 import { AgentSessionDto } from '@/modules/agent/presenters/http/dto/agent-session.dto';
 import { AgentMessageDto } from '@/modules/agent/presenters/http/dto/agent-message.dto';
-import { AgentVariableDto } from '@/modules/agent/presenters/http/dto/agent-variable.dto';
+import { AgentMessageRole } from '@/common/enums/agent-message-role.enum';
 
 const WIRED_MODEL = 'forsyte.ask-forsyte-mock-1-alpha-v5';
 const UNWIRED_MODEL = 'anthropic.claude-sonnet-4-5-20250929-v1:0';
@@ -27,7 +27,7 @@ export class AgentService {
     return plainToInstance(AgentDto, agents, { excludeExtraneousValues: true });
   }
 
-  async createSession(agentId: string, organisationId: string, variables?: AgentVariableDto[]): Promise<AgentSessionDto> {
+  async createSession(agentId: string, organisationId: string): Promise<AgentSessionDto> {
     const agent = await this.prisma.agent.findUnique({ where: { id: agentId } });
     if (!agent) {
       throw new NotFoundException('Agent not found');
@@ -37,33 +37,16 @@ export class AgentService {
       data: {
         agentId: agent.id,
         organisationId,
-        variables: {
-          create: (variables ?? []).map((v) => ({
-            name: v.name,
-            value: v.value,
-          })),
-        },
-      },
-      include: {
-        variables: true,
       },
     });
 
-    return plainToInstance(
-      AgentSessionDto,
-      {
-        ...session,
-        variables: session.variables.map((v) => ({ name: v.name, value: v.value ?? null })),
-      },
-      { excludeExtraneousValues: true },
-    );
+    return plainToInstance(AgentSessionDto, session, { excludeExtraneousValues: true });
   }
 
   async sendMessage(
     sessionId: string,
-    role: string,
+    role: AgentMessageRole,
     content: Record<string, any> | null,
-    variables?: Record<string, any> | null,
   ): Promise<AgentMessageDto> {
     const session = await this.prisma.agentSession.findUnique({
       where: { id: sessionId },
@@ -93,20 +76,19 @@ export class AgentService {
         throw new BadRequestException('First question must be: ' + QUESTION_ONE);
       }
 
-      const [userMessage, agentMessage] = await this.prisma.$transaction([
+      const [, agentMessage] = await this.prisma.$transaction([
         this.prisma.agentMessage.create({
           data: {
             sessionId,
             role,
             sequenceId: 1,
             content: content ?? undefined,
-            variables: variables ?? undefined,
           },
         }),
         this.prisma.agentMessage.create({
           data: {
             sessionId,
-            role: 'assistant',
+            role: AgentMessageRole.Agent,
             sequenceId: 2,
             content: { text: ANSWER_ONE },
           },
@@ -121,20 +103,19 @@ export class AgentService {
         throw new BadRequestException('Second question must be: ' + QUESTION_TWO);
       }
 
-      const [userMessage, agentMessage] = await this.prisma.$transaction([
+      const [, agentMessage] = await this.prisma.$transaction([
         this.prisma.agentMessage.create({
           data: {
             sessionId,
             role,
             sequenceId: 3,
             content: content ?? undefined,
-            variables: variables ?? undefined,
           },
         }),
         this.prisma.agentMessage.create({
           data: {
             sessionId,
-            role: 'assistant',
+            role: AgentMessageRole.Agent,
             sequenceId: 4,
             content: { text: ANSWER_TWO },
           },

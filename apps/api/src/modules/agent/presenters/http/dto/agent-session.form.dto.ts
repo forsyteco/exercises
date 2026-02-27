@@ -1,7 +1,5 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
-import { IsArray, IsNotEmpty, IsOptional, IsString, MinLength, ValidateNested } from 'class-validator';
-import { AgentVariableDto } from './agent-variable.dto';
+import { ApiProperty } from '@nestjs/swagger';
+import { IsNotEmpty, IsString, MinLength } from 'class-validator';
 
 export class AgentSessionForm {
   @ApiProperty({ minLength: 1 })
@@ -15,12 +13,5 @@ export class AgentSessionForm {
   @MinLength(1)
   @IsNotEmpty()
   organisationId!: string;
-
-  @ApiPropertyOptional({ type: [AgentVariableDto] })
-  @IsOptional()
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => AgentVariableDto)
-  variables?: AgentVariableDto[];
 }
 

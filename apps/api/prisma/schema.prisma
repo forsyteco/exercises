@@ -8,17 +8,42 @@ datasource db {
   provider = "postgresql"
 }
 
+enum AgentMessageRole {
+  user
+  agent
+}
+
+enum UserStatus {
+  active
+  inactive
+}
+
 model Organisation {
   id   String @id
   name String
   slug String @unique
 
-  agents    Agent[]
-  sessions  AgentSession[]
-  messages  AgentMessage[]
-  variables AgentVariable[]
+  agents   Agent[]
+  sessions AgentSession[]
+  messages AgentMessage[]
+  users    User[]
 
   @@map("organisations")
+}
+
+model User {
+  id             String      @id
+  organisationId String      @map("organisation_id")
+  name           String
+  email          String      @unique
+  status         UserStatus
+  createdAt      DateTime    @default(now()) @map("created_at")
+  updatedAt      DateTime    @updatedAt @map("updated_at")
+  verifiedAt     DateTime?   @map("verified_at")
+
+  organisation   Organisation @relation(fields: [organisationId], references: [id])
+
+  @@map("users")
 }
 
 model Agent {
@@ -26,12 +51,12 @@ model Agent {
   organisationId String   @map("organisation_id")
   name           String
   slug           String   @unique
-  description    String?
   model          String   @unique
+  description    String?
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
 
-  organisation Organisation  @relation(fields: [organisationId], references: [id])
+  organisation Organisation   @relation(fields: [organisationId], references: [id])
   sessions     AgentSession[]
 
   @@index([slug])
@@ -44,43 +69,26 @@ model AgentSession {
   agentId        String   @map("agent_id")
   createdAt      DateTime @default(now()) @map("created_at")
 
-  organisation Organisation  @relation(fields: [organisationId], references: [id])
-  agent        Agent         @relation(fields: [agentId], references: [id])
+  organisation Organisation   @relation(fields: [organisationId], references: [id])
+  agent        Agent          @relation(fields: [agentId], references: [id])
   messages     AgentMessage[]
-  variables    AgentVariable[]
 
   @@index([agentId])
   @@map("agent_sessions")
 }
 
 model AgentMessage {
-  id             String   @id
-  organisationId String   @map("organisation_id")
-  sessionId      String   @map("session_id")
-  role           String
-  sequenceId     Int      @map("sequence_id")
+  id             String           @id
+  organisationId String           @map("organisation_id")
+  sessionId      String           @map("session_id")
+  role           AgentMessageRole
+  sequenceId     Int              @map("sequence_id")
   content        Json?
-  variables      Json?
-  createdAt      DateTime @default(now()) @map("created_at")
+  createdAt      DateTime         @default(now()) @map("created_at")
 
   organisation Organisation @relation(fields: [organisationId], references: [id])
   session      AgentSession @relation(fields: [sessionId], references: [id])
 
   @@index([sessionId])
   @@map("agent_messages")
-}
-
-model AgentVariable {
-  id             String   @id
-  organisationId String   @map("organisation_id")
-  sessionId      String   @map("session_id")
-  name           String
-  value          Json?
-  createdAt      DateTime @default(now()) @map("created_at")
-
-  organisation Organisation @relation(fields: [organisationId], references: [id])
-  session      AgentSession @relation(fields: [sessionId], references: [id])
-
-  @@index([sessionId])
-  @@map("agent_variables")
 }

@@ -1,6 +1,7 @@
 import { Expose, Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { MinLength, IsNotEmpty, IsString } from 'class-validator';
+import { AgentMessageRole } from '@/common/enums/agent-message-role.enum';
 
 export class AgentMessageDto {
   @ApiProperty({ minLength: 1 })
@@ -17,12 +18,9 @@ export class AgentMessageDto {
   @Expose()
   sessionId!: string;
 
-  @ApiProperty({ minLength: 1 })
-  @IsString()
-  @MinLength(1)
-  @IsNotEmpty()
+  @ApiProperty({ enum: AgentMessageRole })
   @Expose()
-  role!: string;
+  role!: AgentMessageRole;
 
   @ApiProperty()
   @Expose()
@@ -31,10 +29,6 @@ export class AgentMessageDto {
   @ApiPropertyOptional({ type: Object })
   @Expose()
   content?: Record<string, any> | null;
-
-  @ApiPropertyOptional({ type: Object, description: 'Normalized message variables' })
-  @Expose()
-  variables?: Record<string, any> | null;
 
   @ApiProperty({ type: String, format: 'date-time' })
   @Expose()

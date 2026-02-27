@@ -29,7 +29,7 @@ export class AgentController {
     @Param('agentId') agentId: string,
     @Body() dto: AgentSessionForm,
   ): Promise<AgentSessionDto> {
-    return this.agentService.createSession(agentId, dto.organisationId, dto.variables);
+    return this.agentService.createSession(agentId, dto.organisationId);
   }
 
   @Post('sessions/:sessionId/messages')
@@ -42,7 +42,7 @@ export class AgentController {
     @Param('sessionId') sessionId: string,
     @Body() dto: AgentMessageForm,
   ): Promise<AgentMessageDto> {
-    return this.agentService.sendMessage(sessionId, dto.role, dto.content ?? null, dto.variables ?? null);
+    return this.agentService.sendMessage(sessionId, dto.role, dto.content ?? null);
   }
 }
 

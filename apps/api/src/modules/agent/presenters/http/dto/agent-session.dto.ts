@@ -1,7 +1,6 @@
 import { Expose, Type } from 'class-transformer';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty } from '@nestjs/swagger';
 import { MinLength, IsNotEmpty, IsString } from 'class-validator';
-import { AgentVariableDto } from './agent-variable.dto';
 
 export class AgentSessionDto {
   @ApiProperty({ minLength: 1 })
@@ -24,11 +23,6 @@ export class AgentSessionDto {
   @IsNotEmpty()
   @Expose()
   organisationId!: string;
-
-  @ApiPropertyOptional({ type: [AgentVariableDto], description: 'Session variables' })
-  @Expose()
-  @Type(() => AgentVariableDto)
-  variables?: AgentVariableDto[];
 
   @ApiProperty({ type: String, format: 'date-time' })
   @Expose()

@@ -1,19 +1,14 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsNotEmpty, IsOptional, IsString, MinLength } from 'class-validator';
+import { IsEnum, IsOptional } from 'class-validator';
+import { AgentMessageRole } from '@/common/enums/agent-message-role.enum';
 
 export class AgentMessageForm {
-  @ApiProperty({ minLength: 1 })
-  @IsString()
-  @MinLength(1)
-  @IsNotEmpty()
-  role!: string;
+  @ApiProperty({ enum: AgentMessageRole })
+  @IsEnum(AgentMessageRole)
+  role!: AgentMessageRole;
 
   @ApiPropertyOptional({ type: Object, description: 'Arbitrary message content, expects { text: string } for mock Q&A.' })
   @IsOptional()
   content?: Record<string, any> | null;
-
-  @ApiPropertyOptional({ type: Object, description: 'Optional normalized variables for this message.' })
-  @IsOptional()
-  variables?: Record<string, any> | null;
 }
 
