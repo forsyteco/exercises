@@ -1,8 +1,11 @@
 import "dotenv/config";
+import { hash } from "bcrypt";
 import { Pool } from "pg";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
 import { IdGenerator } from "@/utils/id-generator";
+
+const BCRYPT_SALT_ROUNDS = 12;
 
 const connectionString = `${process.env.DATABASE_URL}`;
 const pool = new Pool({ connectionString });
@@ -53,6 +56,7 @@ async function main(): Promise<void> {
   });
 
   const verifiedAt = new Date();
+  const seedPasswordHash = await hash("beeCompliant33", BCRYPT_SALT_ROUNDS);
 
   await prisma.user.upsert({
     where: { email: "buzz.aldrin@forsyte.co" },
@@ -61,10 +65,11 @@ async function main(): Promise<void> {
       organisationId: organisation.id,
       name: "Buzz Aldrin",
       email: "buzz.aldrin@forsyte.co",
+      password: seedPasswordHash,
       status: "active",
       verifiedAt,
     },
-    update: {},
+    update: { password: seedPasswordHash },
   });
   await prisma.user.upsert({
     where: { email: "morgan.beeman@forsyte.co" },
@@ -73,10 +78,11 @@ async function main(): Promise<void> {
       organisationId: organisation.id,
       name: "Morgan Beeman",
       email: "morgan.beeman@forsyte.co",
+      password: seedPasswordHash,
       status: "active",
       verifiedAt,
     },
-    update: {},
+    update: { password: seedPasswordHash },
   });
   await prisma.user.upsert({
     where: { email: "honey.potter@forsyte.co" },
@@ -85,10 +91,11 @@ async function main(): Promise<void> {
       organisationId: organisation.id,
       name: "Honey Potter",
       email: "honey.potter@forsyte.co",
+      password: seedPasswordHash,
       status: "active",
       verifiedAt,
     },
-    update: {},
+    update: { password: seedPasswordHash },
   });
 
   const demoSession = await prisma.agentSession.create({

@@ -36,6 +36,7 @@ model User {
   organisationId String      @map("organisation_id")
   name           String
   email          String      @unique
+  password       String      @map("password")
   status         UserStatus
   createdAt      DateTime    @default(now()) @map("created_at")
   updatedAt      DateTime    @updatedAt @map("updated_at")

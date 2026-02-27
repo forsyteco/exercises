@@ -8,5 +8,7 @@ export class User {
     public readonly createdAt: Date,
     public readonly updatedAt: Date,
     public readonly verifiedAt: Date | null,
+    /** Not exposed in API responses; only used for persistence mapping. */
+    public readonly password?: string,
   ) {}
 }

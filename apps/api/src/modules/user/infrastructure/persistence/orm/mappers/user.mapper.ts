@@ -12,6 +12,7 @@ export class UserMapper {
       record.createdAt,
       record.updatedAt,
       record.verifiedAt,
+      record.password,
     );
   }
 }

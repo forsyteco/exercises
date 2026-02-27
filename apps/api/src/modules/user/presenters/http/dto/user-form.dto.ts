@@ -17,4 +17,10 @@ export class UserFormDto {
   @ApiProperty({ enum: UserStatus })
   @IsEnum(UserStatus)
   status!: UserStatus;
+
+  @ApiProperty({ minLength: 1, description: 'Password (write-only, not returned in responses)' })
+  @IsString()
+  @MinLength(1)
+  @IsNotEmpty()
+  password!: string;
 }

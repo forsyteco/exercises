@@ -8,13 +8,14 @@ import {
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
-import { ApiBody, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { UserService } from '@/modules/user/application/user.service';
 import { UserDto } from '@/modules/user/presenters/http/dto/user.dto';
 import { UserFormDto } from '@/modules/user/presenters/http/dto/user-form.dto';
 import { UserPutFormDto } from '@/modules/user/presenters/http/dto/user-put-form.dto';
 
 @ApiTags('users')
+@ApiBearerAuth()
 @Controller(':organisationIdOrSlug/users')
 export class UserController {
   constructor(private readonly userService: UserService) {}

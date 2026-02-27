@@ -1,5 +1,5 @@
 import { Body, Controller, Get, Param, Post, UsePipes, ValidationPipe } from '@nestjs/common';
-import { ApiBody, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { AgentService } from '@/modules/agent/application/agent.service';
 import { AgentDto } from '@/modules/agent/presenters/http/dto/agent.dto';
 import { AgentSessionDto } from '@/modules/agent/presenters/http/dto/agent-session.dto';
@@ -8,6 +8,7 @@ import { AgentSessionForm } from '@/modules/agent/presenters/http/dto/agent-sess
 import { AgentMessageForm } from '@/modules/agent/presenters/http/dto/agent-message.form.dto';
 
 @ApiTags('agents')
+@ApiBearerAuth()
 @Controller(':organisationIdOrSlug/agents')
 export class AgentController {
   constructor(private readonly agentService: AgentService) {}

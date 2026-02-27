@@ -1,10 +1,11 @@
 import { Body, Controller, Get, Param, Post, UsePipes, ValidationPipe } from '@nestjs/common';
-import { ApiBody, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { OrganisationService } from '@/modules/organisation/application/organisation.service';
 import { OrganisationDto } from '@/modules/organisation/presenters/http/dto/organisation.dto';
 import { OrganisationFormDto } from '@/modules/organisation/presenters/http/dto/organisation-form.dto';
 
 @ApiTags('organisations')
+@ApiBearerAuth()
 @Controller('organisations')
 export class OrganisationController {
   constructor(private readonly organisationService: OrganisationService) {}

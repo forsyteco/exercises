@@ -22,4 +22,10 @@ export class UserPutFormDto {
   @ApiPropertyOptional({ type: String, format: 'date-time', nullable: true })
   @IsOptional()
   verifiedAt?: Date | null;
+
+  @ApiPropertyOptional({ minLength: 1, description: 'Password (write-only, not returned in responses)' })
+  @IsOptional()
+  @IsString()
+  @MinLength(1)
+  password?: string;
 }

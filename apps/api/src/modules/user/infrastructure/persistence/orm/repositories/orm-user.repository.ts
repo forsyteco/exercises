@@ -25,6 +25,11 @@ export class OrmUserRepository extends UserRepositoryPort {
     return record ? UserMapper.toDomain(record) : null;
   }
 
+  async findByEmail(email: string): Promise<User | null> {
+    const record = await this.prisma.user.findUnique({ where: { email } });
+    return record ? UserMapper.toDomain(record) : null;
+  }
+
   async findManyByOrganisationId(organisationId: string): Promise<User[]> {
     const records = await this.prisma.user.findMany({
       where: { organisationId },
@@ -41,6 +46,7 @@ export class OrmUserRepository extends UserRepositoryPort {
         organisationId: data.organisationId,
         name: data.name,
         email: data.email,
+        password: data.password,
         status: data.status as 'active' | 'inactive',
       },
     });
@@ -48,9 +54,10 @@ export class OrmUserRepository extends UserRepositoryPort {
   }
 
   async update(id: string, data: UpdateUserData): Promise<User> {
-    const updateInput: { name?: string; email?: string; status?: 'active' | 'inactive'; verifiedAt?: Date | null } = {};
+    const updateInput: { name?: string; email?: string; password?: string; status?: 'active' | 'inactive'; verifiedAt?: Date | null } = {};
     if (data.name !== undefined) updateInput.name = data.name;
     if (data.email !== undefined) updateInput.email = data.email;
+    if (data.password !== undefined) updateInput.password = data.password;
     if (data.status !== undefined) updateInput.status = data.status as 'active' | 'inactive';
     if (data.verifiedAt !== undefined) updateInput.verifiedAt = data.verifiedAt;
 

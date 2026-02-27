@@ -1,6 +1,10 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
-import { UserRepositoryPort } from '@/modules/user/application/ports/user.repository.port';
+import {
+  UserRepositoryPort,
+  UpdateUserData,
+} from '@/modules/user/application/ports/user.repository.port';
+import { PasswordHasherPort } from '@/modules/user/application/ports/password-hasher.port';
 import { OrganisationRepositoryPort } from '@/modules/organisation/application/ports/organisation.repository.port';
 import { UserDto } from '@/modules/user/presenters/http/dto/user.dto';
 import { UserFormDto } from '@/modules/user/presenters/http/dto/user-form.dto';
@@ -11,7 +15,16 @@ export class UserService {
   constructor(
     private readonly userRepo: UserRepositoryPort,
     private readonly organisationRepo: OrganisationRepositoryPort,
+    private readonly passwordHasher: PasswordHasherPort,
   ) {}
+
+  /** Validates email and password; returns user DTO if valid, null otherwise. Used for login. */
+  async validateCredentials(email: string, password: string): Promise<UserDto | null> {
+    const user = await this.userRepo.findByEmail(email);
+    if (!user?.password) return null;
+    const matches = await this.passwordHasher.compare(password, user.password);
+    return matches ? this.toDto(user) : null;
+  }
 
   async listByOrganisation(organisationIdOrSlug: string): Promise<UserDto[]> {
     const organisationId = await this.resolveOrganisationId(organisationIdOrSlug);
@@ -30,11 +43,13 @@ export class UserService {
 
   async create(organisationIdOrSlug: string, dto: UserFormDto): Promise<UserDto> {
     const organisationId = await this.resolveOrganisationId(organisationIdOrSlug);
+    const hashedPassword = await this.passwordHasher.hash(dto.password);
     try {
       const user = await this.userRepo.create({
         organisationId,
         name: dto.name,
         email: dto.email,
+        password: hashedPassword,
         status: dto.status,
       });
       return this.toDto(user);
@@ -57,12 +72,16 @@ export class UserService {
     if (!user || user.organisationId !== organisationId) {
       throw new NotFoundException('User not found');
     }
-    const updated = await this.userRepo.update(userId, {
+    const updateData: UpdateUserData = {
       name: dto.name,
       email: dto.email,
       status: dto.status,
       verifiedAt: dto.verifiedAt,
-    });
+    };
+    if (dto.password !== undefined) {
+      updateData.password = await this.passwordHasher.hash(dto.password);
+    }
+    const updated = await this.userRepo.update(userId, updateData);
     return this.toDto(updated);
   }
 
