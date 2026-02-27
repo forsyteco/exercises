@@ -13,6 +13,7 @@ const organisationIdGenerator = new IdGenerator("org");
 const agentIdGenerator = new IdGenerator("agt");
 const agentSessionIdGenerator = new IdGenerator("ags");
 const agentMessageIdGenerator = new IdGenerator("agm");
+const userIdGenerator = new IdGenerator("usr");
 
 async function main(): Promise<void> {
   const organisation = await prisma.organisation.upsert({
@@ -47,6 +48,45 @@ async function main(): Promise<void> {
       slug: "unwired-agent",
       model: "anthropic.claude-sonnet-4-5-20250929-v1:0",
       description: "Placeholder agent that is not wired yet.",
+    },
+    update: {},
+  });
+
+  const verifiedAt = new Date();
+
+  await prisma.user.upsert({
+    where: { email: "buzz.aldrin@forsyte.co" },
+    create: {
+      id: userIdGenerator.randomId(),
+      organisationId: organisation.id,
+      name: "Buzz Aldrin",
+      email: "buzz.aldrin@forsyte.co",
+      status: "active",
+      verifiedAt,
+    },
+    update: {},
+  });
+  await prisma.user.upsert({
+    where: { email: "morgan.beeman@forsyte.co" },
+    create: {
+      id: userIdGenerator.randomId(),
+      organisationId: organisation.id,
+      name: "Morgan Beeman",
+      email: "morgan.beeman@forsyte.co",
+      status: "active",
+      verifiedAt,
+    },
+    update: {},
+  });
+  await prisma.user.upsert({
+    where: { email: "honey.potter@forsyte.co" },
+    create: {
+      id: userIdGenerator.randomId(),
+      organisationId: organisation.id,
+      name: "Honey Potter",
+      email: "honey.potter@forsyte.co",
+      status: "active",
+      verifiedAt,
     },
     update: {},
   });

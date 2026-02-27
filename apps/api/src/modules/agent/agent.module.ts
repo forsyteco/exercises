@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
 import { AgentService } from '@/modules/agent/application/agent.service';
 import { AgentController } from '@/modules/agent/presenters/http/agent.controller';
-import { PrismaModule } from '@/modules/prisma/prisma.module';
+import { OrmAgentPersistenceModule } from '@/modules/agent/infrastructure/persistence/orm-persistence.module';
 
 @Module({
-  imports: [PrismaModule],
+  imports: [OrmAgentPersistenceModule],
   controllers: [AgentController],
   providers: [AgentService],
   exports: [AgentService],
