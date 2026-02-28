@@ -7,15 +7,18 @@ import { AgentDto } from '@/modules/agent/presenters/http/dto/agent.dto';
 import { AgentSessionDto } from '@/modules/agent/presenters/http/dto/agent-session.dto';
 import { AgentMessageDto } from '@/modules/agent/presenters/http/dto/agent-message.dto';
 import { AgentMessageRole } from '@/common/enums/agent-message-role.enum';
+import slugify from 'slugify';
 
 const WIRED_MODEL = 'forsyte.ask-forsyte-mock-1-alpha-v5';
 const UNWIRED_MODEL = 'anthropic.claude-sonnet-4-5-20250929-v1:0';
 
-const QUESTION_ONE = 'Do I have matters in high risk jurisdictions?';
-const QUESTION_TWO = 'How many of these have outstanding risk assessments?';
-
-const ANSWER_ONE = 'Yes, you have 12 matters in high-risk jurisdictions across three regions.';
-const ANSWER_TWO = 'Out of these, 5 matters currently have outstanding risk assessments.';
+/** Journey steps: order matters. Incoming message is slugified and matched to the expected step slug. */
+const JOURNEY_STEPS = [
+  { slug: 'do-i-have-matters-in-high-risk-jurisdictions', answer: 'Yes, you have 12 matters in high-risk jurisdictions across three regions.' },
+  { slug: 'how-many-of-those-have-outstanding-risk-assessments', answer: 'Out of these, 5 matters currently have outstanding risk assessments.' },
+  { slug: 'show-the-risk-assessment-flags-for-the-beekeeper-employment-contract', answer: 'Here are the risk assessment flags for the Beekeeper employment contract: [flags to be wired from data].' },
+  { slug: 'summarise-the-matters-with-outstanding-items-and-suggest-next-steps', answer: 'Summary and suggested next steps: [to be wired from matter/outstanding data].' },
+] as const;
 
 @Injectable()
 export class AgentService {
@@ -67,54 +70,44 @@ export class AgentService {
 
     const existingCount = await this.messageRepo.countBySessionId(sessionId);
     const text = typeof content?.text === 'string' ? (content.text as string).trim() : '';
+    if (!text) {
+      throw new BadRequestException('Message content must include a non-empty text field.');
+    }
+    const messageSlug = slugify(text);
 
-    if (existingCount === 0) {
-      if (text !== QUESTION_ONE) {
-        throw new BadRequestException('First question must be: ' + QUESTION_ONE);
-      }
-      const [, second] = await Promise.all([
-        this.messageRepo.create({
-          sessionId,
-          organisationId: session.organisationId,
-          role,
-          sequenceId: 1,
-          content: content ?? undefined,
-        }),
-        this.messageRepo.create({
-          sessionId,
-          organisationId: session.organisationId,
-          role: AgentMessageRole.Agent,
-          sequenceId: 2,
-          content: { text: ANSWER_ONE },
-        }),
-      ]);
-      return this.toMessageDto(second);
+    const stepIndex = existingCount / 2;
+    if (stepIndex < 0 || stepIndex >= JOURNEY_STEPS.length) {
+      throw new BadRequestException(
+        `This mock conversation supports ${JOURNEY_STEPS.length} steps. Expected step ${stepIndex + 1}, but there are already ${existingCount} messages.`,
+      );
     }
 
-    if (existingCount === 2) {
-      if (text !== QUESTION_TWO) {
-        throw new BadRequestException('Second question must be: ' + QUESTION_TWO);
-      }
-      const [, second] = await Promise.all([
-        this.messageRepo.create({
-          sessionId,
-          organisationId: session.organisationId,
-          role,
-          sequenceId: 3,
-          content: content ?? undefined,
-        }),
-        this.messageRepo.create({
-          sessionId,
-          organisationId: session.organisationId,
-          role: AgentMessageRole.Agent,
-          sequenceId: 4,
-          content: { text: ANSWER_TWO },
-        }),
-      ]);
-      return this.toMessageDto(second);
+    const step = JOURNEY_STEPS[stepIndex];
+    if (messageSlug !== step.slug) {
+      throw new BadRequestException(
+        `For step ${stepIndex + 1}, expected a message matching: "${step.slug}". Received slug: "${messageSlug || '(empty)'}".`,
+      );
     }
 
-    throw new BadRequestException('This mock conversation only supports the two predefined questions.');
+    const userSequenceId = existingCount + 1;
+    const agentSequenceId = existingCount + 2;
+    const [, agentMessage] = await Promise.all([
+      this.messageRepo.create({
+        sessionId,
+        organisationId: session.organisationId,
+        role,
+        sequenceId: userSequenceId,
+        content: content ?? undefined,
+      }),
+      this.messageRepo.create({
+        sessionId,
+        organisationId: session.organisationId,
+        role: AgentMessageRole.Agent,
+        sequenceId: agentSequenceId,
+        content: { text: step.answer },
+      }),
+    ]);
+    return this.toMessageDto(agentMessage);
   }
 
   private toAgentDto(agent: { id: string; name: string; slug: string; description: string | null; createdAt: Date; updatedAt: Date }): AgentDto {
