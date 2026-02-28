@@ -20,6 +20,7 @@ const userIdGenerator = new IdGenerator("usr");
 const clientIdGenerator = new IdGenerator("cli");
 const matterIdGenerator = new IdGenerator("mat");
 const riskAssessmentIdGenerator = new IdGenerator("ris");
+const riskAssessmentFlagIdGenerator = new IdGenerator("rif");
 
 async function main(): Promise<void> {
   const organisation = await prisma.organisation.upsert({
@@ -129,6 +130,7 @@ async function main(): Promise<void> {
       reference: "833833",
       type: "individual",
       name: "Augusta Honeycomb",
+      ownedById: honeyPotter.id,
     },
     update: {},
   });
@@ -140,6 +142,7 @@ async function main(): Promise<void> {
       reference: "APIA1",
       type: "business",
       name: "Buzzworth Apiaries",
+      ownedById: honeyPotter.id,
     },
     update: {},
   });
@@ -155,7 +158,7 @@ async function main(): Promise<void> {
       description: "Sale of 49c South Pollen Way",
       status: "active",
       type: "property",
-      ownerId: honeyPotter.id,
+      ownedById: honeyPotter.id,
     },
     update: {},
   });
@@ -169,7 +172,7 @@ async function main(): Promise<void> {
       description: "Hive placement dispute at Oak Meadow",
       status: "pending",
       type: "dispute",
-      ownerId: honeyPotter.id,
+      ownedById: honeyPotter.id,
     },
     update: {},
   });
@@ -183,7 +186,7 @@ async function main(): Promise<void> {
       description: "Beekeeper employment contract",
       status: "active",
       type: "employment",
-      ownerId: honeyPotter.id,
+      ownedById: honeyPotter.id,
     },
     update: {},
   });
@@ -198,7 +201,7 @@ async function main(): Promise<void> {
       matterId: matter1.id,
       status: "in_progress",
       riskLevel: "medium",
-      ownerId: honeyPotter.id,
+      ownedById: honeyPotter.id,
     },
     update: {},
   });
@@ -211,7 +214,7 @@ async function main(): Promise<void> {
       matterId: matter2.id,
       status: "in_progress",
       riskLevel: "low",
-      ownerId: honeyPotter.id,
+      ownedById: honeyPotter.id,
     },
     update: {},
   });
@@ -224,10 +227,55 @@ async function main(): Promise<void> {
       matterId: matter3.id,
       status: "completed",
       riskLevel: "high",
-      ownerId: honeyPotter.id,
+      ownedById: honeyPotter.id,
     },
     update: {},
   });
+
+  // Risk assessment flags: 5 standard flags per risk assessment, all pending
+  const riskAssessmentFlagDefinitions: { name: string; description: string }[] = [
+    {
+      name: "Has the client's identity been verified remotely without a face-to-face meeting?",
+      description:
+        "Whether identity was verified only by remote or digital means (e.g. video call, document upload) with no in-person meeting.",
+    },
+    {
+      name: "Has the identity verification confidence level been met?",
+      description:
+        "Whether the required identity verification confidence level (e.g. high or medium) has been achieved for this client.",
+    },
+    {
+      name: "Is the client a designated person or entity under sanctions?",
+      description:
+        "Sanctions screening result: whether the client or any beneficial owners appear on designated lists (e.g. OFAC, UN, EU).",
+    },
+    {
+      name: "Has adverse media been identified about the client or beneficial owners?",
+      description:
+        "Result of adverse media screening for the client and beneficial owners (negative news, enforcement, litigation, etc.).",
+    },
+    {
+      name: "Was the client born in or resides in a high risk third country jurisdiction?",
+      description:
+        "Whether the client’s place of birth or current residence is in a high-risk third country under applicable regulations.",
+    },
+  ];
+
+  const seedRiskIds = [seedRiskId1, seedRiskId2, seedRiskId3];
+  for (const riskAssessmentId of seedRiskIds) {
+    for (const def of riskAssessmentFlagDefinitions) {
+      await prisma.riskAssessmentFlag.create({
+        data: {
+          id: riskAssessmentFlagIdGenerator.randomId(),
+          organisationId: organisation.id,
+          riskAssessmentId,
+          name: def.name,
+          description: def.description,
+          status: "pending",
+        },
+      });
+    }
+  }
 
   const demoSession = await prisma.agentSession.create({
     data: {

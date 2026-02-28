@@ -10,7 +10,7 @@ export class RiskAssessmentMapper {
       record.matterId,
       record.status,
       record.version,
-      record.ownerId,
+      record.ownedById,
       record.assignedToId,
       record.riskLevel,
       record.createdAt,

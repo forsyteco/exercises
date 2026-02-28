@@ -59,7 +59,7 @@ export class MatterService {
         description: m.description,
         status: m.status as MatterStatus,
         type: m.type,
-        ownerId: m.ownerId,
+        ownedById: m.ownedById,
         createdAt: m.createdAt,
         updatedAt: m.updatedAt,
       },

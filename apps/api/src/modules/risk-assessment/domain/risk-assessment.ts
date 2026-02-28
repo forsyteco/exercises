@@ -6,7 +6,7 @@ export class RiskAssessment {
     public readonly matterId: string,
     public readonly status: string,
     public readonly version: number,
-    public readonly ownerId: string | null,
+    public readonly ownedById: string | null,
     public readonly assignedToId: string | null,
     public readonly riskLevel: string | null,
     public readonly createdAt: Date,

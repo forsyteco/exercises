@@ -43,6 +43,7 @@ export class ClientService {
         reference: c.reference,
         type: c.type as ClientType,
         name: c.name,
+        ownedById: c.ownedById,
         createdAt: c.createdAt,
         updatedAt: c.updatedAt,
       },

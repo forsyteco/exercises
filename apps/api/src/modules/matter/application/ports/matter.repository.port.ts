@@ -7,7 +7,7 @@ export interface CreateMatterData {
   description: string;
   status: string;
   type: string;
-  ownerId: string;
+  ownedById: string;
 }
 
 export abstract class MatterRepositoryPort {

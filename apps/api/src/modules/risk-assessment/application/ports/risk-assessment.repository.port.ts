@@ -11,7 +11,7 @@ export interface CreateRiskAssessmentData {
   organisationId: string;
   clientId: string;
   matterId: string;
-  ownerId?: string | null;
+  ownedById?: string | null;
   assignedToId?: string | null;
   riskLevel?: string | null;
 }

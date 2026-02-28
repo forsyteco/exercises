@@ -61,7 +61,7 @@ export class RiskAssessmentService {
         matterId: r.matterId,
         status: r.status as RiskAssessmentStatus,
         version: r.version,
-        ownerId: r.ownerId,
+        ownedById: r.ownedById,
         assignedToId: r.assignedToId,
         riskLevel: (r.riskLevel as RiskLevel | null) ?? null,
         description,

@@ -7,7 +7,7 @@ export class Matter {
     public readonly description: string,
     public readonly status: string,
     public readonly type: string,
-    public readonly ownerId: string,
+    public readonly ownedById: string,
     public readonly createdAt: Date,
     public readonly updatedAt: Date,
   ) {}

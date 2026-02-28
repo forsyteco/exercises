@@ -11,7 +11,7 @@ export class MatterMapper {
       record.description,
       record.status,
       record.type,
-      record.ownerId,
+      record.ownedById,
       record.createdAt,
       record.updatedAt,
     );

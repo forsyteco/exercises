@@ -1,5 +1,5 @@
 import { Expose, Type } from 'class-transformer';
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsNotEmpty, IsString, MinLength, IsEnum } from 'class-validator';
 import { ClientType } from '@/common/enums/client-type.enum';
 
@@ -30,6 +30,10 @@ export class ClientDto {
   @ApiProperty()
   @Expose()
   name!: string;
+
+  @ApiPropertyOptional()
+  @Expose()
+  ownedById?: string | null;
 
   @ApiProperty({ type: String, format: 'date-time' })
   @Expose()

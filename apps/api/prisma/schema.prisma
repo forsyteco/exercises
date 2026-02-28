@@ -74,6 +74,7 @@ model User {
   verifiedAt     DateTime?   @map("verified_at")
 
   organisation   Organisation @relation(fields: [organisationId], references: [id])
+  clients        Client[]
 
   @@map("users")
 }
@@ -131,10 +132,12 @@ model Client {
   reference      String
   type           ClientType
   name           String
+  ownedById      String?    @map("owned_by_id")
   createdAt      DateTime   @default(now()) @map("created_at")
   updatedAt      DateTime   @updatedAt @map("updated_at")
 
   organisation   Organisation   @relation(fields: [organisationId], references: [id])
+  ownedBy        User?          @relation(fields: [ownedById], references: [id])
   matters        Matter[]
   riskAssessments RiskAssessment[]
 
@@ -150,7 +153,7 @@ model Matter {
   description    String
   status         MatterStatus
   type           String        @map("type")
-  ownerId        String       @map("owner_id")
+  ownedById      String       @map("owned_by_id")
   createdAt      DateTime     @default(now()) @map("created_at")
   updatedAt      DateTime     @updatedAt @map("updated_at")
 
@@ -170,8 +173,8 @@ model RiskAssessment {
   matterId        String               @map("matter_id")
   status         RiskAssessmentStatus @default(in_progress)
   version        Int                  @default(1)
-  ownerId        String?              @map("owner_id")
-  assignedToId   String?              @map("assigned_to")
+  ownedById      String?              @map("owned_by_id")
+  assignedToId   String?              @map("assigned_to_id")
   riskLevel      RiskLevel?           @map("risk_level")
   createdAt      DateTime             @default(now()) @map("created_at")
   updatedAt      DateTime             @updatedAt @map("updated_at")
@@ -189,9 +192,9 @@ model RiskAssessment {
 model RiskAssessmentFlag {
   id                 String                   @id
   organisationId     String                  @map("organisation_id")
-  riskAssessmentId   String?                 @map("matter_risk_assessment_id")
-  name               String?                 @map("flag_name")
-  description        String?                 @map("flag_description")
+  riskAssessmentId   String?                 @map("risk_assessment_id")
+  name               String?                 @map("name")
+  description        String?                 @map("description")
   status             RiskAssessmentFlagStatus @default(pending) @map("status")
   acceptedAt         DateTime?               @map("accepted_at")
   acceptedById       String?                 @map("accepted_by_id")

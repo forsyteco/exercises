@@ -56,6 +56,7 @@ export class OrmClientRepository extends ClientRepositoryPort {
       reference: data.reference,
       type: data.type as ClientType,
       name: data.name,
+      ownedById: data.ownedById ?? undefined,
     };
     const record = await this.prisma.client.create({ data: createData });
     return ClientMapper.toDomain(record);
@@ -66,6 +67,7 @@ export class OrmClientRepository extends ClientRepositoryPort {
     if (patch.reference !== undefined) data.reference = patch.reference;
     if (patch.type !== undefined) data.type = patch.type as ClientType;
     if (patch.name !== undefined) data.name = patch.name;
+    if (patch.ownedById !== undefined) data.ownedById = patch.ownedById;
     const record = await this.prisma.client.update({
       where: { id },
       data,

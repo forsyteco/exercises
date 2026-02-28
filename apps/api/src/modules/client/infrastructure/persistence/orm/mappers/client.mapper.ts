@@ -9,6 +9,7 @@ export class ClientMapper {
       record.reference,
       record.type,
       record.name,
+      record.ownedById,
       record.createdAt,
       record.updatedAt,
     );

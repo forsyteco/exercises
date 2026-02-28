@@ -5,6 +5,7 @@ export interface CreateClientData {
   reference: string;
   type: string;
   name: string;
+  ownedById?: string | null;
 }
 
 export abstract class ClientRepositoryPort {

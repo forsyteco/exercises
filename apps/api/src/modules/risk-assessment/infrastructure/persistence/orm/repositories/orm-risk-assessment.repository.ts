@@ -90,7 +90,7 @@ export class OrmRiskAssessmentRepository extends RiskAssessmentRepositoryPort {
       organisationId: data.organisationId,
       clientId: data.clientId,
       matterId: data.matterId,
-      ownerId: data.ownerId ?? undefined,
+      ownedById: data.ownedById ?? undefined,
       assignedToId: data.assignedToId ?? undefined,
       riskLevel: data.riskLevel != null ? (data.riskLevel as RiskLevel) : undefined,
     };
@@ -102,7 +102,7 @@ export class OrmRiskAssessmentRepository extends RiskAssessmentRepositoryPort {
     const data: Prisma.RiskAssessmentUncheckedUpdateInput = {};
     if (patch.status !== undefined) data.status = patch.status as RiskAssessmentStatus;
     if (patch.version !== undefined) data.version = patch.version;
-    if (patch.ownerId !== undefined) data.ownerId = patch.ownerId;
+    if (patch.ownedById !== undefined) data.ownedById = patch.ownedById;
     if (patch.assignedToId !== undefined) data.assignedToId = patch.assignedToId;
     if (patch.riskLevel !== undefined) data.riskLevel = patch.riskLevel as RiskLevel | null;
     const record = await this.prisma.riskAssessment.update({

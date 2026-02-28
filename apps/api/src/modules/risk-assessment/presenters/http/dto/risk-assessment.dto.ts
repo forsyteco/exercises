@@ -45,7 +45,7 @@ export class RiskAssessmentDto {
 
   @ApiPropertyOptional()
   @Expose()
-  ownerId?: string | null;
+  ownedById?: string | null;
 
   @ApiPropertyOptional()
   @Expose()

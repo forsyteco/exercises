@@ -66,7 +66,7 @@ export class OrmMatterRepository extends MatterRepositoryPort {
       description: data.description,
       status: data.status as MatterStatus,
       type: data.type,
-      ownerId: data.ownerId,
+      ownedById: data.ownedById,
     };
     const record = await this.prisma.matter.create({ data: createData });
     return MatterMapper.toDomain(record);
@@ -78,7 +78,7 @@ export class OrmMatterRepository extends MatterRepositoryPort {
     if (patch.description !== undefined) data.description = patch.description;
     if (patch.status !== undefined) data.status = patch.status as MatterStatus;
     if (patch.type !== undefined) data.type = patch.type;
-    if (patch.ownerId !== undefined) data.ownerId = patch.ownerId;
+    if (patch.ownedById !== undefined) data.ownedById = patch.ownedById;
     const record = await this.prisma.matter.update({
       where: { id },
       data,

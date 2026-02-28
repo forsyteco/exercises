@@ -44,7 +44,7 @@ export class MatterDto {
 
   @ApiProperty()
   @Expose()
-  ownerId!: string;
+  ownedById!: string;
 
   @ApiProperty({ type: String, format: 'date-time' })
   @Expose()
