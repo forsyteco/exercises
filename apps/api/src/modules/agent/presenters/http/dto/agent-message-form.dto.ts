@@ -2,7 +2,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsEnum, IsOptional } from 'class-validator';
 import { AgentMessageRole } from '@/common/enums/agent-message-role.enum';
 
-export class AgentMessageForm {
+export class AgentMessageFormDto {
   @ApiProperty({ enum: AgentMessageRole })
   @IsEnum(AgentMessageRole)
   role!: AgentMessageRole;

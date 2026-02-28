@@ -4,8 +4,8 @@ import { AgentService } from '@/modules/agent/application/agent.service';
 import { AgentDto } from '@/modules/agent/presenters/http/dto/agent.dto';
 import { AgentSessionDto } from '@/modules/agent/presenters/http/dto/agent-session.dto';
 import { AgentMessageDto } from '@/modules/agent/presenters/http/dto/agent-message.dto';
-import { AgentSessionForm } from '@/modules/agent/presenters/http/dto/agent-session-form.dto';
-import { AgentMessageForm } from '@/modules/agent/presenters/http/dto/agent-message-form.dto';
+import { AgentSessionFormDto } from '@/modules/agent/presenters/http/dto/agent-session-form.dto';
+import { AgentMessageFormDto } from '@/modules/agent/presenters/http/dto/agent-message-form.dto';
 
 @ApiTags('agents')
 @ApiBearerAuth()
@@ -28,12 +28,12 @@ export class AgentController {
   @ApiOperation({ summary: 'Create a new agent session' })
   @ApiParam({ name: 'organisationIdOrSlug', type: String, description: 'Organisation ID or slug' })
   @ApiParam({ name: 'agentId', type: String })
-  @ApiBody({ type: AgentSessionForm })
+  @ApiBody({ type: AgentSessionFormDto })
   @ApiResponse({ status: 201, type: AgentSessionDto })
   async createSession(
     @Param('organisationIdOrSlug') organisationIdOrSlug: string,
     @Param('agentId') agentId: string,
-    @Body() dto: AgentSessionForm,
+    @Body() dto: AgentSessionFormDto,
   ): Promise<AgentSessionDto> {
     return this.agentService.createSession(agentId, organisationIdOrSlug);
   }
@@ -43,12 +43,12 @@ export class AgentController {
   @ApiOperation({ summary: 'Send a message in a session and receive the mock agent response' })
   @ApiParam({ name: 'organisationIdOrSlug', type: String, description: 'Organisation ID or slug' })
   @ApiParam({ name: 'sessionId', type: String })
-  @ApiBody({ type: AgentMessageForm })
+  @ApiBody({ type: AgentMessageFormDto })
   @ApiResponse({ status: 201, type: AgentMessageDto })
   async sendMessage(
     @Param('organisationIdOrSlug') _organisationIdOrSlug: string,
     @Param('sessionId') sessionId: string,
-    @Body() dto: AgentMessageForm,
+    @Body() dto: AgentMessageFormDto,
   ): Promise<AgentMessageDto> {
     return this.agentService.sendMessage(sessionId, dto.role, dto.content ?? null);
   }

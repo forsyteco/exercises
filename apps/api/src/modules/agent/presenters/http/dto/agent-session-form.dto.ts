@@ -1,1 +1,1 @@
-export class AgentSessionForm {}
+export class AgentSessionFormDto {}
