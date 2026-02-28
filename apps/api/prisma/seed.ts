@@ -22,6 +22,105 @@ const matterIdGenerator = new IdGenerator("mat");
 const riskAssessmentIdGenerator = new IdGenerator("ris");
 const riskAssessmentFlagIdGenerator = new IdGenerator("rif");
 
+interface FlagAcceptanceContext {
+  seedRiskId1: string;
+  seedRiskId2: string;
+  seedRiskId3: string;
+  morganBeemanId: string;
+  buzzAldrinId: string;
+  honeyPotterId: string;
+  flagsAcceptedAt: Date;
+}
+
+function getFlagAcceptance(
+  riskAssessmentId: string,
+  defName: string,
+  ctx: FlagAcceptanceContext,
+): { status: "pending" | "accepted"; acceptedById?: string; acceptedAt?: Date } {
+  if (riskAssessmentId === ctx.seedRiskId1) {
+    return {
+      status: "accepted",
+      acceptedById: ctx.morganBeemanId,
+      acceptedAt: ctx.flagsAcceptedAt,
+    };
+  }
+  if (riskAssessmentId === ctx.seedRiskId2) {
+    if (defName === FLAG_ADVERSE_MEDIA) {
+      return { status: "pending" };
+    }
+    if (defName === FLAG_IDENTITY_CONFIDENCE) {
+      return {
+        status: "accepted",
+        acceptedById: ctx.buzzAldrinId,
+        acceptedAt: ctx.flagsAcceptedAt,
+      };
+    }
+    return {
+      status: "accepted",
+      acceptedById: ctx.honeyPotterId,
+      acceptedAt: ctx.flagsAcceptedAt,
+    };
+  }
+  if (riskAssessmentId === ctx.seedRiskId3 && defName === FLAG_REMOTE_IDENTITY) {
+    return {
+      status: "accepted",
+      acceptedById: ctx.buzzAldrinId,
+      acceptedAt: ctx.flagsAcceptedAt,
+    };
+  }
+  return { status: "pending" };
+}
+
+const FLAG_REMOTE_IDENTITY =
+  "Has the client's identity been verified remotely without a face-to-face meeting?";
+const FLAG_IDENTITY_CONFIDENCE =
+  "Has the identity verification confidence level been met?";
+const FLAG_ADVERSE_MEDIA =
+  "Has adverse media been identified about the client or beneficial owners?";
+
+async function seedRiskAssessmentFlags(
+  organisationId: string,
+  seedRiskIds: string[],
+  riskAssessmentFlagDefinitions: { name: string; description: string }[],
+  flagsAcceptedAt: Date,
+  userIds: { morganBeemanId: string; buzzAldrinId: string; honeyPotterId: string },
+): Promise<void> {
+  const [seedRiskId1, seedRiskId2, seedRiskId3] = seedRiskIds;
+  const acceptanceCtx: FlagAcceptanceContext = {
+    seedRiskId1,
+    seedRiskId2,
+    seedRiskId3,
+    morganBeemanId: userIds.morganBeemanId,
+    buzzAldrinId: userIds.buzzAldrinId,
+    honeyPotterId: userIds.honeyPotterId,
+    flagsAcceptedAt,
+  };
+  for (const riskAssessmentId of seedRiskIds) {
+    for (const def of riskAssessmentFlagDefinitions) {
+      const acceptance = getFlagAcceptance(
+        riskAssessmentId,
+        def.name,
+        acceptanceCtx,
+      );
+      await prisma.riskAssessmentFlag.create({
+        data: {
+          id: riskAssessmentFlagIdGenerator.randomId(),
+          organisationId,
+          riskAssessmentId,
+          name: def.name,
+          description: def.description,
+          status: acceptance.status,
+          ...(acceptance.acceptedById &&
+            acceptance.acceptedAt && {
+              acceptedById: acceptance.acceptedById,
+              acceptedAt: acceptance.acceptedAt,
+            }),
+        },
+      });
+    }
+  }
+}
+
 async function main(): Promise<void> {
   const organisation = await prisma.organisation.upsert({
     where: { slug: "forsyte" },
@@ -72,7 +171,7 @@ async function main(): Promise<void> {
   const verifiedAt = new Date();
   const seedPasswordHash = await hash("beeCompliant33", BCRYPT_SALT_ROUNDS);
 
-  await prisma.user.upsert({
+  const buzzAldrin = await prisma.user.upsert({
     where: { email: "buzz.aldrin@forsyte.co" },
     create: {
       id: userIdGenerator.randomId(),
@@ -85,7 +184,7 @@ async function main(): Promise<void> {
     },
     update: { password: seedPasswordHash },
   });
-  await prisma.user.upsert({
+  const morganBeeman = await prisma.user.upsert({
     where: { email: "morgan.beeman@forsyte.co" },
     create: {
       id: userIdGenerator.randomId(),
@@ -130,7 +229,7 @@ async function main(): Promise<void> {
       reference: "833833",
       type: "individual",
       name: "Augusta Honeycomb",
-      ownedById: honeyPotter.id,
+      ownedById: morganBeeman.id,
     },
     update: {},
   });
@@ -158,7 +257,7 @@ async function main(): Promise<void> {
       description: "Sale of 49c South Pollen Way",
       status: "active",
       type: "property",
-      ownedById: honeyPotter.id,
+      ownedById: morganBeeman.id,
     },
     update: {},
   });
@@ -201,7 +300,7 @@ async function main(): Promise<void> {
       matterId: matter1.id,
       status: "in_progress",
       riskLevel: "medium",
-      ownedById: honeyPotter.id,
+      ownedById: morganBeeman.id,
     },
     update: {},
   });
@@ -232,15 +331,15 @@ async function main(): Promise<void> {
     update: {},
   });
 
-  // Risk assessment flags: 5 standard flags per risk assessment, all pending
+  // Risk assessment flags: 5 standard flags per risk assessment
   const riskAssessmentFlagDefinitions: { name: string; description: string }[] = [
     {
-      name: "Has the client's identity been verified remotely without a face-to-face meeting?",
+      name: FLAG_REMOTE_IDENTITY,
       description:
         "Whether identity was verified only by remote or digital means (e.g. video call, document upload) with no in-person meeting.",
     },
     {
-      name: "Has the identity verification confidence level been met?",
+      name: FLAG_IDENTITY_CONFIDENCE,
       description:
         "Whether the required identity verification confidence level (e.g. high or medium) has been achieved for this client.",
     },
@@ -250,32 +349,30 @@ async function main(): Promise<void> {
         "Sanctions screening result: whether the client or any beneficial owners appear on designated lists (e.g. OFAC, UN, EU).",
     },
     {
-      name: "Has adverse media been identified about the client or beneficial owners?",
+      name: FLAG_ADVERSE_MEDIA,
       description:
         "Result of adverse media screening for the client and beneficial owners (negative news, enforcement, litigation, etc.).",
     },
     {
       name: "Was the client born in or resides in a high risk third country jurisdiction?",
       description:
-        "Whether the client’s place of birth or current residence is in a high-risk third country under applicable regulations.",
+        "Whether the client's place of birth or current residence is in a high-risk third country under applicable regulations.",
     },
   ];
 
+  const flagsAcceptedAt = new Date("2025-02-01T12:00:00.000Z");
   const seedRiskIds = [seedRiskId1, seedRiskId2, seedRiskId3];
-  for (const riskAssessmentId of seedRiskIds) {
-    for (const def of riskAssessmentFlagDefinitions) {
-      await prisma.riskAssessmentFlag.create({
-        data: {
-          id: riskAssessmentFlagIdGenerator.randomId(),
-          organisationId: organisation.id,
-          riskAssessmentId,
-          name: def.name,
-          description: def.description,
-          status: "pending",
-        },
-      });
-    }
-  }
+  await seedRiskAssessmentFlags(
+    organisation.id,
+    seedRiskIds,
+    riskAssessmentFlagDefinitions,
+    flagsAcceptedAt,
+    {
+      morganBeemanId: morganBeeman.id,
+      buzzAldrinId: buzzAldrin.id,
+      honeyPotterId: honeyPotter.id,
+    },
+  );
 
   const demoSession = await prisma.agentSession.create({
     data: {
@@ -329,14 +426,14 @@ async function main(): Promise<void> {
   });
 }
 
-main()
-  .then(async () => {
-    await prisma.$disconnect();
-    await pool.end();
-  })
-  .catch(async (e) => {
+void (async (): Promise<void> => {
+  try {
+    await main();
+  } catch (e) {
     console.error(e);
+    process.exit(1);
+  } finally {
     await prisma.$disconnect();
     await pool.end();
-    process.exit(1);
-  });
+  }
+})();
