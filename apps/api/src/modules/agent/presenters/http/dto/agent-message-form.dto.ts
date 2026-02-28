@@ -11,4 +11,3 @@ export class AgentMessageForm {
   @IsOptional()
   content?: Record<string, any> | null;
 }
-

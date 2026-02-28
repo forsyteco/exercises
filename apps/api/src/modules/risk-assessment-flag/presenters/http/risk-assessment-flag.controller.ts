@@ -1,23 +1,8 @@
-import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  Param,
-  Patch,
-  Post,
-  UseGuards,
-  UsePipes,
-  ValidationPipe,
-} from '@nestjs/common';
-import { ApiBearerAuth, ApiBody, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { Controller, Get, Param, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '@/modules/auth/infrastructure/guards/jwt-auth.guard';
 import { RiskAssessmentFlagService } from '@/modules/risk-assessment-flag/application/risk-assessment-flag.service';
 import { RiskAssessmentFlagDto } from '@/modules/risk-assessment-flag/presenters/http/dto/risk-assessment-flag.dto';
-import {
-  CreateRiskAssessmentFlagFormDto,
-  UpdateRiskAssessmentFlagFormDto,
-} from '@/modules/risk-assessment-flag/presenters/http/dto/risk-assessment-flag.form.dto';
 
 @ApiTags('risk-assessment-flags')
 @ApiBearerAuth()
@@ -59,47 +44,5 @@ export class RiskAssessmentFlagController {
     @Param('id') id: string,
   ): Promise<RiskAssessmentFlagDto> {
     return this.riskAssessmentFlagService.getById(id, organisationIdOrSlug);
-  }
-
-  @Post()
-  @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
-  @ApiOperation({ summary: 'Create a risk assessment flag' })
-  @ApiParam({ name: 'organisationIdOrSlug', type: String })
-  @ApiBody({ type: CreateRiskAssessmentFlagFormDto })
-  @ApiResponse({ status: 201, type: RiskAssessmentFlagDto })
-  async create(
-    @Param('organisationIdOrSlug') organisationIdOrSlug: string,
-    @Body() dto: CreateRiskAssessmentFlagFormDto,
-  ): Promise<RiskAssessmentFlagDto> {
-    return this.riskAssessmentFlagService.create(organisationIdOrSlug, dto);
-  }
-
-  @Patch(':id')
-  @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
-  @ApiOperation({ summary: 'Update a risk assessment flag' })
-  @ApiParam({ name: 'organisationIdOrSlug', type: String })
-  @ApiParam({ name: 'id', type: String })
-  @ApiBody({ type: UpdateRiskAssessmentFlagFormDto })
-  @ApiResponse({ status: 200, type: RiskAssessmentFlagDto })
-  @ApiResponse({ status: 404, description: 'Risk assessment flag not found' })
-  async update(
-    @Param('organisationIdOrSlug') organisationIdOrSlug: string,
-    @Param('id') id: string,
-    @Body() dto: UpdateRiskAssessmentFlagFormDto,
-  ): Promise<RiskAssessmentFlagDto> {
-    return this.riskAssessmentFlagService.update(id, organisationIdOrSlug, dto);
-  }
-
-  @Delete(':id')
-  @ApiOperation({ summary: 'Delete a risk assessment flag' })
-  @ApiParam({ name: 'organisationIdOrSlug', type: String })
-  @ApiParam({ name: 'id', type: String })
-  @ApiResponse({ status: 204 })
-  @ApiResponse({ status: 404, description: 'Risk assessment flag not found' })
-  async delete(
-    @Param('organisationIdOrSlug') organisationIdOrSlug: string,
-    @Param('id') id: string,
-  ): Promise<void> {
-    await this.riskAssessmentFlagService.delete(id, organisationIdOrSlug);
   }
 }

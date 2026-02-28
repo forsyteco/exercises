@@ -2,7 +2,7 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
 import { LoginCommand } from '@/modules/auth/application/commands/login.command';
 import { TokenIssuerPort } from '@/modules/auth/application/ports/token-issuer.port';
-import { LoginResponseDto } from '@/modules/auth/presenters/http/dto/login-response.dto';
+import { AccessTokenDto } from '@/modules/auth/presenters/http/dto/access-token.dto';
 import { UserService } from '@/modules/user/application/user.service';
 
 @Injectable()
@@ -12,7 +12,7 @@ export class AuthService {
     private readonly userService: UserService,
   ) {}
 
-  async login(command: LoginCommand): Promise<LoginResponseDto> {
+  async login(command: LoginCommand): Promise<AccessTokenDto> {
     const user = await this.userService.validateCredentials(command.email, command.password);
     if (!user) {
       throw new UnauthorizedException('Invalid email or password');
@@ -20,11 +20,11 @@ export class AuthService {
 
     const accessToken = await this.tokenIssuer.issue({ sub: user.id });
 
-    return this.toLoginResponseDto(accessToken);
+    return this.toAccessTokenDto(accessToken);
   }
 
-  private toLoginResponseDto(accessToken: string): LoginResponseDto {
-    return plainToInstance(LoginResponseDto, { accessToken }, {
+  private toAccessTokenDto(accessToken: string): AccessTokenDto {
+    return plainToInstance(AccessTokenDto, { accessToken }, {
       excludeExtraneousValues: true,
     });
   }

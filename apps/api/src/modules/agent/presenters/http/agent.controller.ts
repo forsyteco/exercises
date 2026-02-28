@@ -4,8 +4,8 @@ import { AgentService } from '@/modules/agent/application/agent.service';
 import { AgentDto } from '@/modules/agent/presenters/http/dto/agent.dto';
 import { AgentSessionDto } from '@/modules/agent/presenters/http/dto/agent-session.dto';
 import { AgentMessageDto } from '@/modules/agent/presenters/http/dto/agent-message.dto';
-import { AgentSessionForm } from '@/modules/agent/presenters/http/dto/agent-session.form.dto';
-import { AgentMessageForm } from '@/modules/agent/presenters/http/dto/agent-message.form.dto';
+import { AgentSessionForm } from '@/modules/agent/presenters/http/dto/agent-session-form.dto';
+import { AgentMessageForm } from '@/modules/agent/presenters/http/dto/agent-message-form.dto';
 
 @ApiTags('agents')
 @ApiBearerAuth()

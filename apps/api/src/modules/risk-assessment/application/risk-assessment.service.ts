@@ -1,9 +1,8 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
 import { RiskAssessmentRepositoryPort } from '@/modules/risk-assessment/application/ports/risk-assessment.repository.port';
 import { RiskAssessment } from '@/modules/risk-assessment/domain/risk-assessment';
 import { RiskAssessmentDto } from '@/modules/risk-assessment/presenters/http/dto/risk-assessment.dto';
-import { CreateRiskAssessmentFormDto } from '@/modules/risk-assessment/presenters/http/dto/risk-assessment.form.dto';
 import { RiskAssessmentStatus } from '@/common/enums/risk-assessment-status.enum';
 import { RiskLevel } from '@/common/enums/risk-level.enum';
 
@@ -12,8 +11,11 @@ export class RiskAssessmentService {
   constructor(private readonly riskAssessmentRepo: RiskAssessmentRepositoryPort) {}
 
   async list(organisationIdOrSlug: string): Promise<RiskAssessmentDto[]> {
-    const list = await this.riskAssessmentRepo.findManyByOrganisationIdOrSlug(organisationIdOrSlug);
-    return list.map((r) => this.toRiskAssessmentDto(r));
+    const list =
+      await this.riskAssessmentRepo.findManyByOrganisationIdOrSlugWithClientAndMatter(organisationIdOrSlug);
+    return list.map(({ riskAssessment, clientName, matterDescription }) =>
+      this.toRiskAssessmentDto(riskAssessment, { clientName, matterDescription }),
+    );
   }
 
   async getById(id: string, organisationIdOrSlug: string): Promise<RiskAssessmentDto> {
@@ -21,76 +23,14 @@ export class RiskAssessmentService {
     if (!organisationId) {
       throw new NotFoundException('Organisation not found');
     }
-    const riskAssessment = await this.ensureRiskAssessment(id);
-    if (riskAssessment.organisationId !== organisationId) {
+    const withContext = await this.riskAssessmentRepo.findByIdWithClientAndMatter(id);
+    if (!withContext || withContext.riskAssessment.organisationId !== organisationId) {
       throw new NotFoundException('Risk assessment not found');
     }
-    return this.toRiskAssessmentDto(riskAssessment);
-  }
-
-  async create(organisationIdOrSlug: string, dto: CreateRiskAssessmentFormDto): Promise<RiskAssessmentDto> {
-    const organisationId = await this.riskAssessmentRepo.getOrganisationIdByIdOrSlug(organisationIdOrSlug);
-    if (!organisationId) {
-      throw new NotFoundException('Organisation not found');
-    }
-    try {
-      const riskAssessment = await this.riskAssessmentRepo.create({
-        organisationId,
-        clientId: dto.clientId,
-        matterId: dto.matterId,
-        ownerId: dto.ownerId ?? null,
-        assignedToId: dto.assignedToId ?? null,
-        riskLevel: dto.riskLevel ?? null,
-      });
-      return this.toRiskAssessmentDto(riskAssessment);
-    } catch (error: unknown) {
-      if (error && typeof error === 'object' && 'code' in error && (error as { code: string }).code === 'P2002') {
-        throw new ConflictException('A risk assessment with this identifier already exists.');
-      }
-      throw error;
-    }
-  }
-
-  async update(
-    id: string,
-    organisationIdOrSlug: string,
-    dto: { status?: RiskAssessmentStatus; version?: number; ownerId?: string | null; assignedToId?: string | null; riskLevel?: RiskLevel | null },
-  ): Promise<RiskAssessmentDto> {
-    const organisationId = await this.riskAssessmentRepo.getOrganisationIdByIdOrSlug(organisationIdOrSlug);
-    if (!organisationId) {
-      throw new NotFoundException('Organisation not found');
-    }
-    const existing = await this.ensureRiskAssessment(id);
-    if (existing.organisationId !== organisationId) {
-      throw new NotFoundException('Risk assessment not found');
-    }
-    try {
-      const updated = await this.riskAssessmentRepo.update(id, {
-        status: dto.status,
-        version: dto.version,
-        ownerId: dto.ownerId,
-        assignedToId: dto.assignedToId,
-        riskLevel: dto.riskLevel,
-      });
-      return this.toRiskAssessmentDto(updated);
-    } catch (error: unknown) {
-      if (error && typeof error === 'object' && 'code' in error && (error as { code: string }).code === 'P2002') {
-        throw new ConflictException('Conflict updating risk assessment.');
-      }
-      throw error;
-    }
-  }
-
-  async delete(id: string, organisationIdOrSlug: string): Promise<void> {
-    const organisationId = await this.riskAssessmentRepo.getOrganisationIdByIdOrSlug(organisationIdOrSlug);
-    if (!organisationId) {
-      throw new NotFoundException('Organisation not found');
-    }
-    const existing = await this.ensureRiskAssessment(id);
-    if (existing.organisationId !== organisationId) {
-      throw new NotFoundException('Risk assessment not found');
-    }
-    await this.riskAssessmentRepo.delete(id);
+    return this.toRiskAssessmentDto(withContext.riskAssessment, {
+      clientName: withContext.clientName,
+      matterDescription: withContext.matterDescription,
+    });
   }
 
   private async ensureRiskAssessment(id: string): Promise<RiskAssessment> {
@@ -101,7 +41,17 @@ export class RiskAssessmentService {
     return riskAssessment;
   }
 
-  private toRiskAssessmentDto(r: RiskAssessment): RiskAssessmentDto {
+  /** Format virtual description: matter description + " for " + client name */
+  private formatDescription(matterDescription: string, clientName: string): string {
+    return `${matterDescription} for ${clientName}`;
+  }
+
+  private toRiskAssessmentDto(
+    r: RiskAssessment,
+    context?: { clientName: string; matterDescription: string },
+  ): RiskAssessmentDto {
+    const description =
+      context != null ? this.formatDescription(context.matterDescription, context.clientName) : undefined;
     return plainToInstance(
       RiskAssessmentDto,
       {
@@ -114,6 +64,7 @@ export class RiskAssessmentService {
         ownerId: r.ownerId,
         assignedToId: r.assignedToId,
         riskLevel: (r.riskLevel as RiskLevel | null) ?? null,
+        description,
         createdAt: r.createdAt,
         updatedAt: r.updatedAt,
       },

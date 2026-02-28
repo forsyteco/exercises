@@ -55,6 +55,13 @@ export class RiskAssessmentDto {
   @Expose()
   riskLevel?: RiskLevel | null;
 
+  /** Virtual: matter description + " for " + client name (e.g. "Sale of 49b South Parade for Julian Dawson") */
+  @ApiPropertyOptional({
+    description: 'Computed from matter description and client name: "{matterDescription} for {clientName}"',
+  })
+  @Expose()
+  description?: string;
+
   @ApiProperty({ type: String, format: 'date-time' })
   @Expose()
   @Type(() => Date)

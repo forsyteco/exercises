@@ -10,7 +10,7 @@ import {
 @Module({
   imports: [PrismaModule],
   providers: [
-    { provide: CLIENT_ID_GENERATOR, useFactory: () => new IdGenerator('clt') },
+    { provide: CLIENT_ID_GENERATOR, useFactory: () => new IdGenerator('cli') },
     { provide: ClientRepositoryPort, useClass: OrmClientRepository },
   ],
   exports: [ClientRepositoryPort],

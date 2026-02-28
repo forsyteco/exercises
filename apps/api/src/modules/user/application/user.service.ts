@@ -1,14 +1,9 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
-import {
-  UserRepositoryPort,
-  UpdateUserData,
-} from '@/modules/user/application/ports/user.repository.port';
+import { UserRepositoryPort } from '@/modules/user/application/ports/user.repository.port';
 import { PasswordHasherPort } from '@/modules/user/application/ports/password-hasher.port';
 import { OrganisationRepositoryPort } from '@/modules/organisation/application/ports/organisation.repository.port';
 import { UserDto } from '@/modules/user/presenters/http/dto/user.dto';
-import { UserFormDto } from '@/modules/user/presenters/http/dto/user-form.dto';
-import { UserPutFormDto } from '@/modules/user/presenters/http/dto/user-put-form.dto';
 
 @Injectable()
 export class UserService {
@@ -39,50 +34,6 @@ export class UserService {
       throw new NotFoundException('User not found');
     }
     return this.toDto(user);
-  }
-
-  async create(organisationIdOrSlug: string, dto: UserFormDto): Promise<UserDto> {
-    const organisationId = await this.resolveOrganisationId(organisationIdOrSlug);
-    const hashedPassword = await this.passwordHasher.hash(dto.password);
-    try {
-      const user = await this.userRepo.create({
-        organisationId,
-        name: dto.name,
-        email: dto.email,
-        password: hashedPassword,
-        status: dto.status,
-      });
-      return this.toDto(user);
-    } catch (error: unknown) {
-      const prismaError = error as { code?: string };
-      if (prismaError?.code === 'P2002') {
-        throw new ConflictException('A user with this email already exists.');
-      }
-      throw error;
-    }
-  }
-
-  async update(
-    organisationIdOrSlug: string,
-    userId: string,
-    dto: UserPutFormDto,
-  ): Promise<UserDto> {
-    const organisationId = await this.resolveOrganisationId(organisationIdOrSlug);
-    const user = await this.userRepo.findById(userId);
-    if (!user || user.organisationId !== organisationId) {
-      throw new NotFoundException('User not found');
-    }
-    const updateData: UpdateUserData = {
-      name: dto.name,
-      email: dto.email,
-      status: dto.status,
-      verifiedAt: dto.verifiedAt,
-    };
-    if (dto.password !== undefined) {
-      updateData.password = await this.passwordHasher.hash(dto.password);
-    }
-    const updated = await this.userRepo.update(userId, updateData);
-    return this.toDto(updated);
   }
 
   private async resolveOrganisationId(organisationIdOrSlug: string): Promise<string> {

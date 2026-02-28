@@ -10,7 +10,7 @@ import {
 @Module({
   imports: [PrismaModule],
   providers: [
-    { provide: RISK_ASSESSMENT_ID_GENERATOR, useFactory: () => new IdGenerator('ras') },
+    { provide: RISK_ASSESSMENT_ID_GENERATOR, useFactory: () => new IdGenerator('ris') },
     { provide: RiskAssessmentRepositoryPort, useClass: OrmRiskAssessmentRepository },
   ],
   exports: [RiskAssessmentRepositoryPort],

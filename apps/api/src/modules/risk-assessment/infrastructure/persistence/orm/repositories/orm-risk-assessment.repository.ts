@@ -5,6 +5,7 @@ import { IdGenerator } from '@/utils/id-generator';
 import {
   RiskAssessmentRepositoryPort,
   CreateRiskAssessmentData,
+  RiskAssessmentWithDescriptionContext,
 } from '@/modules/risk-assessment/application/ports/risk-assessment.repository.port';
 import { RiskAssessment } from '@/modules/risk-assessment/domain/risk-assessment';
 import { RiskAssessmentMapper } from '@/modules/risk-assessment/infrastructure/persistence/orm/mappers/risk-assessment.mapper';
@@ -25,6 +26,19 @@ export class OrmRiskAssessmentRepository extends RiskAssessmentRepositoryPort {
     return record ? RiskAssessmentMapper.toDomain(record) : null;
   }
 
+  async findByIdWithClientAndMatter(id: string): Promise<RiskAssessmentWithDescriptionContext | null> {
+    const record = await this.prisma.riskAssessment.findUnique({
+      where: { id },
+      include: { client: true, matter: true },
+    });
+    if (!record) return null;
+    return {
+      riskAssessment: RiskAssessmentMapper.toDomain(record),
+      clientName: record.client.name,
+      matterDescription: record.matter.description,
+    };
+  }
+
   async findManyByOrganisationIdOrSlug(organisationIdOrSlug: string): Promise<RiskAssessment[]> {
     const org = await this.prisma.organisation.findFirst({
       where: {
@@ -37,6 +51,27 @@ export class OrmRiskAssessmentRepository extends RiskAssessmentRepositoryPort {
       orderBy: { createdAt: 'desc' },
     });
     return records.map(RiskAssessmentMapper.toDomain);
+  }
+
+  async findManyByOrganisationIdOrSlugWithClientAndMatter(
+    organisationIdOrSlug: string,
+  ): Promise<RiskAssessmentWithDescriptionContext[]> {
+    const org = await this.prisma.organisation.findFirst({
+      where: {
+        OR: [{ id: organisationIdOrSlug }, { slug: organisationIdOrSlug }],
+      },
+    });
+    if (!org) return [];
+    const records = await this.prisma.riskAssessment.findMany({
+      where: { organisationId: org.id },
+      orderBy: { createdAt: 'desc' },
+      include: { client: true, matter: true },
+    });
+    return records.map((record) => ({
+      riskAssessment: RiskAssessmentMapper.toDomain(record),
+      clientName: record.client.name,
+      matterDescription: record.matter.description,
+    }));
   }
 
   async getOrganisationIdByIdOrSlug(organisationIdOrSlug: string): Promise<string | null> {

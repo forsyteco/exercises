@@ -17,6 +17,9 @@ const agentIdGenerator = new IdGenerator("agt");
 const agentSessionIdGenerator = new IdGenerator("ags");
 const agentMessageIdGenerator = new IdGenerator("agm");
 const userIdGenerator = new IdGenerator("usr");
+const clientIdGenerator = new IdGenerator("cli");
+const matterIdGenerator = new IdGenerator("mat");
+const riskAssessmentIdGenerator = new IdGenerator("ris");
 
 async function main(): Promise<void> {
   const organisation = await prisma.organisation.upsert({
@@ -94,7 +97,7 @@ async function main(): Promise<void> {
     },
     update: { password: seedPasswordHash },
   });
-  await prisma.user.upsert({
+  const honeyPotter = await prisma.user.upsert({
     where: { email: "honey.potter@forsyte.co" },
     create: {
       id: userIdGenerator.randomId(),
@@ -106,6 +109,124 @@ async function main(): Promise<void> {
       verifiedAt,
     },
     update: { password: seedPasswordHash },
+  });
+
+  // Clients (bee themed) — prefixes cli, mat, ris at repo layer
+  const seedClientId1 = clientIdGenerator.randomId();
+  const seedClientId2 = clientIdGenerator.randomId();
+  const seedMatterId1 = matterIdGenerator.randomId();
+  const seedMatterId2 = matterIdGenerator.randomId();
+  const seedMatterId3 = matterIdGenerator.randomId();
+  const seedRiskId1 = riskAssessmentIdGenerator.randomId();
+  const seedRiskId2 = riskAssessmentIdGenerator.randomId();
+  const seedRiskId3 = riskAssessmentIdGenerator.randomId();
+
+  const client1 = await prisma.client.upsert({
+    where: { id: seedClientId1 },
+    create: {
+      id: seedClientId1,
+      organisationId: organisation.id,
+      reference: "833833",
+      type: "individual",
+      name: "Augusta Honeycomb",
+    },
+    update: {},
+  });
+  const client2 = await prisma.client.upsert({
+    where: { id: seedClientId2 },
+    create: {
+      id: seedClientId2,
+      organisationId: organisation.id,
+      reference: "APIA1",
+      type: "business",
+      name: "Buzzworth Apiaries",
+    },
+    update: {},
+  });
+
+  // Matters: 2 for client 1, 1 for client 2 (bee themed)
+  const matter1 = await prisma.matter.upsert({
+    where: { id: seedMatterId1 },
+    create: {
+      id: seedMatterId1,
+      organisationId: organisation.id,
+      clientId: client1.id,
+      reference: "APIA1/1",
+      description: "Sale of 49c South Pollen Way",
+      status: "active",
+      type: "property",
+      ownerId: honeyPotter.id,
+    },
+    update: {},
+  });
+  const matter2 = await prisma.matter.upsert({
+    where: { id: seedMatterId2 },
+    create: {
+      id: seedMatterId2,
+      organisationId: organisation.id,
+      clientId: client1.id,
+      reference: "APIA1/2",
+      description: "Hive placement dispute at Oak Meadow",
+      status: "pending",
+      type: "dispute",
+      ownerId: honeyPotter.id,
+    },
+    update: {},
+  });
+  const matter3 = await prisma.matter.upsert({
+    where: { id: seedMatterId3 },
+    create: {
+      id: seedMatterId3,
+      organisationId: organisation.id,
+      clientId: client2.id,
+      reference: "123456",
+      description: "Beekeeper employment contract",
+      status: "active",
+      type: "employment",
+      ownerId: honeyPotter.id,
+    },
+    update: {},
+  });
+
+  // Risk assessments: 1 per matter
+  await prisma.riskAssessment.upsert({
+    where: { id: seedRiskId1 },
+    create: {
+      id: seedRiskId1,
+      organisationId: organisation.id,
+      clientId: client1.id,
+      matterId: matter1.id,
+      status: "in_progress",
+      riskLevel: "medium",
+      ownerId: honeyPotter.id,
+    },
+    update: {},
+  });
+  await prisma.riskAssessment.upsert({
+    where: { id: seedRiskId2 },
+    create: {
+      id: seedRiskId2,
+      organisationId: organisation.id,
+      clientId: client1.id,
+      matterId: matter2.id,
+      status: "in_progress",
+      riskLevel: "low",
+      ownerId: honeyPotter.id,
+    },
+    update: {},
+  });
+  await prisma.riskAssessment.upsert({
+    where: { id: seedRiskId3 },
+    create: {
+      id: seedRiskId3,
+      organisationId: organisation.id,
+      clientId: client2.id,
+      matterId: matter3.id,
+      status: "completed",
+      riskLevel: "high",
+      ownerId: honeyPotter.id,
+    },
+    update: {},
   });
 
   const demoSession = await prisma.agentSession.create({
