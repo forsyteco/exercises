@@ -23,8 +23,18 @@ async function main(): Promise<void> {
     where: { slug: "forsyte" },
     create: {
       id: organisationIdGenerator.randomId(),
-      name: "Forsyte",
+      name: "Forsyte Risk",
       slug: "forsyte",
+    },
+    update: {},
+  });
+
+  await prisma.organisation.upsert({
+    where: { slug: "bumble-law" },
+    create: {
+      id: organisationIdGenerator.randomId(),
+      name: "Bumble Law",
+      slug: "bumble-law",
     },
     update: {},
   });

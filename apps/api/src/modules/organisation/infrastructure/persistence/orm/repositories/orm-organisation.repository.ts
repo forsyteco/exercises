@@ -21,10 +21,10 @@ export class OrmOrganisationRepository extends OrganisationRepositoryPort {
     return record ? OrganisationMapper.toDomain(record) : null;
   }
 
-  async findByIdOrSlug(idOrSlug: string): Promise<Organisation | null> {
+  async findByIdOrSlug(organisationIdOrSlug: string): Promise<Organisation | null> {
     const record = await this.prisma.organisation.findFirst({
       where: {
-        OR: [{ id: idOrSlug }, { slug: idOrSlug }],
+        OR: [{ id: organisationIdOrSlug }, { slug: organisationIdOrSlug }],
       },
     });
     return record ? OrganisationMapper.toDomain(record) : null;

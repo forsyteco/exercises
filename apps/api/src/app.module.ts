@@ -8,6 +8,10 @@ import { JwtAuthGuard } from '@/modules/auth/infrastructure/guards/jwt-auth.guar
 import { AgentModule } from '@/modules/agent/agent.module';
 import { OrganisationModule } from '@/modules/organisation/organisation.module';
 import { UserModule } from '@/modules/user/user.module';
+import { RiskAssessmentModule } from '@/modules/risk-assessment/risk-assessment.module';
+import { RiskAssessmentFlagModule } from '@/modules/risk-assessment-flag/risk-assessment-flag.module';
+import { ClientModule } from '@/modules/client/client.module';
+import { MatterModule } from '@/modules/matter/matter.module';
 
 @Module({
   imports: [
@@ -16,6 +20,10 @@ import { UserModule } from '@/modules/user/user.module';
     AgentModule,
     OrganisationModule,
     UserModule,
+    RiskAssessmentModule,
+    RiskAssessmentFlagModule,
+    ClientModule,
+    MatterModule,
   ],
   controllers: [AppController],
   providers: [

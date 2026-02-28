@@ -18,15 +18,46 @@ enum UserStatus {
   inactive
 }
 
+enum RiskAssessmentStatus {
+  in_progress
+  completed
+}
+
+enum RiskLevel {
+  low
+  medium
+  high
+}
+
+enum RiskAssessmentFlagStatus {
+  pending
+  accepted
+}
+
+enum ClientType {
+  individual
+  business
+}
+
+enum MatterStatus {
+  active
+  closed
+  pending
+}
+
 model Organisation {
   id   String @id
   name String
   slug String @unique
 
-  agents   Agent[]
-  sessions AgentSession[]
-  messages AgentMessage[]
-  users    User[]
+  agents             Agent[]
+  sessions           AgentSession[]
+  messages           AgentMessage[]
+  users              User[]
+  riskAssessments    RiskAssessment[]
+  riskAssessmentFlags RiskAssessmentFlag[]
+  clients            Client[]
+  matters            Matter[]
 
   @@map("organisations")
 }
@@ -92,4 +123,84 @@ model AgentMessage {
 
   @@index([sessionId])
   @@map("agent_messages")
+}
+
+model Client {
+  id             String     @id
+  organisationId String     @map("organisation_id")
+  reference      String
+  type           ClientType
+  name           String
+  createdAt      DateTime   @default(now()) @map("created_at")
+  updatedAt      DateTime   @updatedAt @map("updated_at")
+
+  organisation   Organisation   @relation(fields: [organisationId], references: [id])
+  matters        Matter[]
+  riskAssessments RiskAssessment[]
+
+  @@index([organisationId])
+  @@map("clients")
+}
+
+model Matter {
+  id             String       @id
+  organisationId String       @map("organisation_id")
+  clientId       String       @map("client_id")
+  reference      String
+  description    String
+  status         MatterStatus
+  type           String        @map("type")
+  ownerId        String       @map("owner_id")
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
+
+  organisation   Organisation   @relation(fields: [organisationId], references: [id])
+  client         Client         @relation(fields: [clientId], references: [id])
+  riskAssessments RiskAssessment[]
+
+  @@index([organisationId])
+  @@index([clientId])
+  @@map("matters")
+}
+
+model RiskAssessment {
+  id             String               @id
+  organisationId String               @map("organisation_id")
+  clientId       String               @map("client_id")
+  matterId        String               @map("matter_id")
+  status         RiskAssessmentStatus @default(in_progress)
+  version        Int                  @default(1)
+  ownerId        String?              @map("owner_id")
+  assignedToId   String?              @map("assigned_to")
+  riskLevel      RiskLevel?           @map("risk_level")
+  createdAt      DateTime             @default(now()) @map("created_at")
+  updatedAt      DateTime             @updatedAt @map("updated_at")
+
+  organisation Organisation          @relation(fields: [organisationId], references: [id])
+  client       Client                @relation(fields: [clientId], references: [id])
+  matter       Matter                @relation(fields: [matterId], references: [id])
+  flags        RiskAssessmentFlag[]
+
+  @@index([clientId])
+  @@index([matterId])
+  @@map("risk_assessments")
+}
+
+model RiskAssessmentFlag {
+  id                 String                   @id
+  organisationId     String                  @map("organisation_id")
+  riskAssessmentId   String?                 @map("matter_risk_assessment_id")
+  name               String?                 @map("flag_name")
+  description        String?                 @map("flag_description")
+  status             RiskAssessmentFlagStatus @default(pending) @map("status")
+  acceptedAt         DateTime?               @map("accepted_at")
+  acceptedById       String?                 @map("accepted_by_id")
+  createdAt          DateTime                @default(now()) @map("created_at")
+  updatedAt          DateTime                @updatedAt @map("updated_at")
+
+  organisation   Organisation   @relation(fields: [organisationId], references: [id])
+  riskAssessment RiskAssessment? @relation(fields: [riskAssessmentId], references: [id])
+
+  @@index([riskAssessmentId])
+  @@map("risk_assessment_flags")
 }

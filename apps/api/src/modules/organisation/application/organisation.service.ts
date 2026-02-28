@@ -17,8 +17,8 @@ export class OrganisationService {
     return list.map((o) => this.toDto(o));
   }
 
-  async findByIdOrSlug(idOrSlug: string): Promise<OrganisationDto> {
-    const organisation = await this.organisationRepo.findByIdOrSlug(idOrSlug);
+  async findByIdOrSlug(organisationIdOrSlug: string): Promise<OrganisationDto> {
+    const organisation = await this.organisationRepo.findByIdOrSlug(organisationIdOrSlug);
     if (!organisation) {
       throw new NotFoundException('Organisation not found');
     }

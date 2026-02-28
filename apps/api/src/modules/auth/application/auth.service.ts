@@ -18,10 +18,7 @@ export class AuthService {
       throw new UnauthorizedException('Invalid email or password');
     }
 
-    const accessToken = await this.tokenIssuer.issue(
-      { sub: user.id },
-      command.expiry,
-    );
+    const accessToken = await this.tokenIssuer.issue({ sub: user.id });
 
     return this.toLoginResponseDto(accessToken);
   }

@@ -19,7 +19,7 @@ export class AuthController {
   @ApiResponse({ status: 201, description: 'Login successful', type: LoginResponseDto })
   @ApiResponse({ status: 401, description: 'Invalid email or password' })
   async login(@Body() dto: LoginRequestDto): Promise<LoginResponseDto> {
-    const command = new LoginCommand(dto.email, dto.password, dto.expiry);
+    const command = new LoginCommand(dto.email, dto.password);
     return this.authService.login(command);
   }
 }
