@@ -1,6 +1,6 @@
 import { Logger } from '@nestjs/common';
 
-const BRAND_LOGO = `
+const BRAND = `
 ███████╗ ██████╗ ██████╗ ███████╗██╗   ██╗████████╗███████╗
 ██╔════╝██╔═══██╗██╔══██╗██╔════╝╚██╗ ██╔╝╚══██╔══╝██╔════╝
 █████╗  ██║   ██║██████╔╝███████╗ ╚████╔╝    ██║   █████╗
@@ -9,5 +9,5 @@ const BRAND_LOGO = `
 ╚═╝      ╚═════╝ ╚═╝  ╚═╝╚══════╝   ╚═╝      ╚═╝   ╚══════╝`;
 
 export function logBrand(logger: Logger): void {
-  logger.log(BRAND_LOGO);
+  logger.log(BRAND);
 }
