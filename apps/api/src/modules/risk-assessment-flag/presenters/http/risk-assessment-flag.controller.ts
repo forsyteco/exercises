@@ -7,7 +7,7 @@ import { RiskAssessmentFlagDto } from '@/modules/risk-assessment-flag/presenters
 @ApiTags('risk-assessment-flags')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
-@Controller(':organisationIdOrSlug/risk-assessment-flags')
+@Controller(':organisationIdOrSlug/risk/assessment/flags')
 export class RiskAssessmentFlagController {
   constructor(private readonly riskAssessmentFlagService: RiskAssessmentFlagService) {}
 
@@ -33,16 +33,16 @@ export class RiskAssessmentFlagController {
     return this.riskAssessmentFlagService.listByRiskAssessmentId(organisationIdOrSlug, riskAssessmentId);
   }
 
-  @Get(':id')
+  @Get(':riskAssessmentFlagId')
   @ApiOperation({ summary: 'Get a risk assessment flag by id' })
   @ApiParam({ name: 'organisationIdOrSlug', type: String })
-  @ApiParam({ name: 'id', type: String })
+  @ApiParam({ name: 'riskAssessmentFlagId', type: String })
   @ApiResponse({ status: 200, type: RiskAssessmentFlagDto })
   @ApiResponse({ status: 404, description: 'Risk assessment flag not found' })
   async getById(
     @Param('organisationIdOrSlug') organisationIdOrSlug: string,
-    @Param('id') id: string,
+    @Param('riskAssessmentFlagId') riskAssessmentFlagId: string,
   ): Promise<RiskAssessmentFlagDto> {
-    return this.riskAssessmentFlagService.getById(id, organisationIdOrSlug);
+    return this.riskAssessmentFlagService.getById(riskAssessmentFlagId, organisationIdOrSlug);
   }
 }

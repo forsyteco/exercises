@@ -19,16 +19,16 @@ export class ClientController {
     return this.clientService.list(organisationIdOrSlug);
   }
 
-  @Get(':id')
+  @Get(':clientId')
   @ApiOperation({ summary: 'Get a client by id' })
   @ApiParam({ name: 'organisationIdOrSlug', type: String })
-  @ApiParam({ name: 'id', type: String })
+  @ApiParam({ name: 'clientId', type: String })
   @ApiResponse({ status: 200, type: ClientDto })
   @ApiResponse({ status: 404, description: 'Client not found' })
   async getById(
     @Param('organisationIdOrSlug') organisationIdOrSlug: string,
-    @Param('id') id: string,
+    @Param('clientId') clientId: string,
   ): Promise<ClientDto> {
-    return this.clientService.getById(id, organisationIdOrSlug);
+    return this.clientService.getById(clientId, organisationIdOrSlug);
   }
 }

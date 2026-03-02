@@ -31,16 +31,16 @@ export class MatterController {
     return this.matterService.listByClientId(organisationIdOrSlug, clientId);
   }
 
-  @Get(':id')
+  @Get(':matterId')
   @ApiOperation({ summary: 'Get a matter by id' })
   @ApiParam({ name: 'organisationIdOrSlug', type: String })
-  @ApiParam({ name: 'id', type: String })
+  @ApiParam({ name: 'matterId', type: String })
   @ApiResponse({ status: 200, type: MatterDto })
   @ApiResponse({ status: 404, description: 'Matter not found' })
   async getById(
     @Param('organisationIdOrSlug') organisationIdOrSlug: string,
-    @Param('id') id: string,
+    @Param('matterId') matterId: string,
   ): Promise<MatterDto> {
-    return this.matterService.getById(id, organisationIdOrSlug);
+    return this.matterService.getById(matterId, organisationIdOrSlug);
   }
 }
