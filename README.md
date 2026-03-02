@@ -8,6 +8,8 @@ This repository is a small monorepo used for frontend exercises on top of a real
 
 ### Quick start
 
+> All commands below assume your working directory is the **root of the repository**.
+
 #### Prerequisites
 
 - **Node.js**: version 18 or newer.
@@ -16,15 +18,13 @@ This repository is a small monorepo used for frontend exercises on top of a real
 
 #### 1. Install dependencies
 
-From the repo root:
-
 ```bash
 pnpm install
 ```
 
 #### 2. Set up the database
 
-The API needs a PostgreSQL database before it can start. Follow these steps from the `apps/api` directory.
+The API needs a PostgreSQL database before it can start.
 
 **Create the database and configure the connection:**
 
@@ -32,7 +32,7 @@ The API needs a PostgreSQL database before it can start. Follow these steps from
 2. Copy the example env file and adjust if needed:
 
 ```bash
-cp .env.example .env
+cp apps/api/.env.example apps/api/.env
 ```
 
 The default connection string in `.env.example` expects Postgres on `localhost:5432` with user `postgres` and password `postgres`. Update `DATABASE_URL` in your new `.env` file if your setup differs.
@@ -40,9 +40,9 @@ The default connection string in `.env.example` expects Postgres on `localhost:5
 **Run migrations, generate the Prisma client, and seed data:**
 
 ```bash
-pnpm prisma:generate   # generate the Prisma client from the schema
-pnpm prisma:migrate    # apply database migrations
-pnpm prisma:seed       # seed demo data (users, clients, matters, etc.)
+pnpm --filter api prisma:generate   # generate the Prisma client from the schema
+pnpm --filter api prisma:migrate    # apply database migrations
+pnpm --filter api prisma:seed       # seed demo data (users, clients, matters, etc.)
 ```
 
 The seed script creates:
@@ -53,7 +53,7 @@ The seed script creates:
 You can also browse the database with:
 
 ```bash
-pnpm prisma:studio     # open Prisma Studio at http://localhost:5555
+pnpm --filter api prisma:studio     # open Prisma Studio at http://localhost:5555
 ```
 
 - Schema: `apps/api/prisma/schema.prisma`
@@ -70,11 +70,14 @@ pnpm dev
 Or run them separately:
 
 ```bash
-pnpm dev --filter api   # NestJS API on http://localhost:8000
-pnpm dev --filter web   # Next.js app on http://localhost:3000
+pnpm dev --filter api   # NestJS API on http://localhost:8174
+pnpm dev --filter web   # Next.js app on http://localhost:3891
 ```
 
-API docs are available at http://localhost:8000/swagger once the API is running.
+> **Non-standard ports**: This project deliberately uses ports **8174** (API) and **3891** (web) instead of the usual 8000/3000 to avoid clashing with other local projects that use the same tech stack. Make sure you use these ports when accessing the apps in your browser:
+>
+> - Web app: http://localhost:3891
+> - API / Swagger docs: http://localhost:8174/swagger
 
 #### Tests and linting
 

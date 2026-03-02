@@ -6,10 +6,10 @@ import { logBrand } from '@/utils/brand';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  const port = Number(process.env.PORT) || 8000;
+  const port = Number(process.env.PORT) || 8174;
 
   app.enableCors({
-    origin: ['http://localhost:3000'],
+    origin: ['http://localhost:3891'],
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
   });
