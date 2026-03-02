@@ -6,22 +6,60 @@ This repository is a small monorepo used for frontend exercises on top of a real
 - **`apps/api`**: NestJS + Prisma + Postgres API exposing agent and risk-related endpoints.
 - **`apps/web`**: Next.js frontend where candidates complete the exercises.
 
-### Environment and tooling (quick start)
+### Quick start
 
-#### Requirements
+> All commands below assume your working directory is the **root of the repository**.
+
+#### Prerequisites
 
 - **Node.js**: version 18 or newer.
 - **Package manager**: `pnpm` (see the `packageManager` field in `package.json`).
+- **PostgreSQL**: a running PostgreSQL instance (local install, Docker, etc.).
 
-#### Install dependencies
-
-From the repo root:
+#### 1. Install dependencies
 
 ```bash
 pnpm install
 ```
 
-#### Run the stack
+#### 2. Set up the database
+
+The API needs a PostgreSQL database before it can start.
+
+**Create the database and configure the connection:**
+
+1. Ensure you have a PostgreSQL database called `forsyteco` available. How you create it depends on your setup (e.g. `createdb`, a Docker container, a GUI tool, etc.).
+2. Copy the example env file and adjust if needed:
+
+```bash
+cp apps/api/.env.example apps/api/.env
+```
+
+The default connection string in `.env.example` expects Postgres on `localhost:5432` with user `postgres` and password `postgres`. Update `DATABASE_URL` in your new `.env` file if your setup differs.
+
+**Run migrations, generate the Prisma client, and seed data:**
+
+```bash
+pnpm --filter api prisma:generate   # generate the Prisma client from the schema
+pnpm --filter api prisma:migrate    # apply database migrations
+pnpm --filter api prisma:seed       # seed demo data (users, clients, matters, etc.)
+```
+
+The seed script creates:
+
+- A primary organisation (`forsyte`) with a small set of users, clients, matters, risk assessments, and risk flags.
+- A wired mock agent model (`forsyte.ask-forsyte-mock-1-alpha-v5`) and a demo agent session.
+
+You can also browse the database with:
+
+```bash
+pnpm --filter api prisma:studio     # open Prisma Studio at http://localhost:5555
+```
+
+- Schema: `apps/api/prisma/schema.prisma`
+- Seed script: `apps/api/prisma/seed.ts`
+
+#### 3. Run the stack
 
 Start both API and web via Turbo:
 
@@ -32,9 +70,14 @@ pnpm dev
 Or run them separately:
 
 ```bash
-pnpm dev --filter api   # NestJS API (apps/api)
-pnpm dev --filter web   # Next.js app (apps/web)
+pnpm dev --filter api   # NestJS API on http://localhost:8174
+pnpm dev --filter web   # Next.js app on http://localhost:3891
 ```
+
+> **Non-standard ports**: This project deliberately uses ports **8174** (API) and **3891** (web) instead of the usual 8000/3000 to avoid clashing with other local projects that use the same tech stack. Make sure you use these ports when accessing the apps in your browser:
+>
+> - Web app: http://localhost:3891
+> - API / Swagger docs: http://localhost:8174/swagger
 
 #### Tests and linting
 
@@ -44,27 +87,6 @@ pnpm test --filter api
 pnpm lint
 pnpm lint --filter web
 ```
-
-### Database, Prisma, and seed data
-
-The API uses Prisma with a Postgres database:
-
-- Schema: `apps/api/prisma/schema.prisma`
-- Seed script: `apps/api/prisma/seed.ts`
-
-From `apps/api` you can initialise and inspect data:
-
-```bash
-pnpm prisma:generate   # generate Prisma client
-pnpm prisma:migrate    # run dev migrations
-pnpm prisma:seed       # seed demo data
-pnpm prisma:studio     # open Prisma Studio
-```
-
-The seed script creates:
-
-- A primary organisation (`forsyte`) with a small set of users, clients, matters, risk assessments, and risk flags.
-- A wired mock agent model (`forsyte.ask-forsyte-mock-1-alpha-v5`) and a demo agent session.
 
 ### Authentication
 
